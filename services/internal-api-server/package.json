@@ -1,0 +1,12 @@
+{
+  "name": "laolv-internal-api-server",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "老驴 API 中转服务",
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.1030.0",
+    "bcryptjs": "^3.0.3",
+    "pg": "^8.16.3"
+  }
+}

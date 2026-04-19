@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>设备授权 | web4browser 管理后台</title>
+    <link rel="stylesheet" href="/admin-theme.css" />
+  </head>
+  <body class="admin-body" data-admin-page="devices">
+    <header class="admin-header">
+      <div class="container admin-header-inner">
+        <div class="admin-brand-wrap">
+          <div class="admin-title">web4browser 设备授权</div>
+          <div class="admin-subtitle">查看机器激活、设备库存和端点授权占用。</div>
+        </div>
+        <nav class="admin-top-nav"></nav>
+        <div class="admin-header-actions">
+          <button class="button button-primary" id="admin-refresh" type="button">刷新</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="container">
+        <div class="admin-feedback" id="admin-feedback" hidden></div>
+
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h1>设备列表</h1>
+              <p>监控活跃席位、非活跃机器和桌面端版本分布。</p>
+            </div>
+          </div>
+
+          <div class="admin-filter-bar">
+            <label class="admin-filter-field admin-filter-field-wide">
+              <span>搜索</span>
+              <input id="device-search" type="search" placeholder="设备名、机器指纹、用户或平台" />
+            </label>
+            <label class="admin-filter-field">
+              <span>状态</span>
+              <select id="device-status">
+                <option value="">全部</option>
+                <option value="active">生效中</option>
+                <option value="inactive">未活跃</option>
+              </select>
+            </label>
+            <div class="admin-header-actions">
+              <button class="button button-secondary" id="device-apply" type="button">应用筛选</button>
+            </div>
+          </div>
+
+          <div class="admin-summary-grid" id="devices-summary"></div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>设备</th>
+                  <th>用户</th>
+                  <th>状态</th>
+                  <th>机器指纹</th>
+                  <th>首次出现</th>
+                  <th>最近活跃</th>
+                </tr>
+              </thead>
+              <tbody id="devices-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/admin-devices.js"></script>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>审计动态 | web4browser 管理后台</title>
+    <link rel="stylesheet" href="/admin-theme.css" />
+  </head>
+  <body class="admin-body" data-admin-page="audit">
+    <header class="admin-header">
+      <div class="container admin-header-inner">
+        <div class="admin-brand-wrap">
+          <div class="admin-title">web4browser 审计动态</div>
+          <div class="admin-subtitle">查看路由、用户和积分调整等后台变更记录。</div>
+        </div>
+        <nav class="admin-top-nav"></nav>
+        <div class="admin-header-actions">
+          <button class="button button-primary" id="admin-refresh" type="button">刷新</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="container">
+        <div class="admin-feedback" id="admin-feedback" hidden></div>
+
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h1>审计列表</h1>
+              <p>搜索动作、目标对象和原因，追踪最近的后台变更。</p>
+            </div>
+          </div>
+
+          <div class="admin-filter-bar">
+            <label class="admin-filter-field admin-filter-field-wide">
+              <span>搜索</span>
+              <input id="audit-search" type="search" placeholder="操作者、动作、目标 ID 或载荷内容" />
+            </label>
+            <label class="admin-filter-field">
+              <span>动作</span>
+              <input id="audit-action" type="text" placeholder="admin.users.status.updated" />
+            </label>
+            <label class="admin-filter-field">
+              <span>目标类型</span>
+              <input id="audit-target-type" type="text" placeholder="user" />
+            </label>
+            <div class="admin-header-actions">
+              <button class="button button-secondary" id="audit-apply" type="button">应用筛选</button>
+            </div>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>操作者</th>
+                  <th>动作</th>
+                  <th>目标</th>
+                  <th>原因</th>
+                  <th>载荷</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/admin-audit.js"></script>
+  </body>
+</html>

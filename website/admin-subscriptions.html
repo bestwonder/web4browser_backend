@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>订阅计划 | web4browser 管理后台</title>
+    <link rel="stylesheet" href="/admin-theme.css" />
+  </head>
+  <body class="admin-body" data-admin-page="subscriptions">
+    <header class="admin-header">
+      <div class="container admin-header-inner">
+        <div class="admin-brand-wrap">
+          <div class="admin-title">web4browser 订阅计划</div>
+          <div class="admin-subtitle">查看套餐健康度、续费窗口和容量分配。</div>
+        </div>
+        <nav class="admin-top-nav"></nav>
+        <div class="admin-header-actions">
+          <button class="button button-primary" id="admin-refresh" type="button">刷新</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="container">
+        <div class="admin-feedback" id="admin-feedback" hidden></div>
+
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h1>订阅列表</h1>
+              <p>查看生效套餐、试用账号，以及每个账号应拥有的容量。</p>
+            </div>
+          </div>
+
+          <div class="admin-filter-bar">
+            <label class="admin-filter-field admin-filter-field-wide">
+              <span>搜索</span>
+              <input id="subscription-search" type="search" placeholder="用户、邮箱、套餐或订阅号" />
+            </label>
+            <label class="admin-filter-field">
+              <span>状态</span>
+              <select id="subscription-status">
+                <option value="">全部</option>
+                <option value="active">生效中</option>
+                <option value="trialing">试用中</option>
+                <option value="none">未开通</option>
+              </select>
+            </label>
+            <div class="admin-header-actions">
+              <button class="button button-secondary" id="subscription-apply" type="button">应用筛选</button>
+            </div>
+          </div>
+
+          <div class="admin-summary-grid" id="subscriptions-summary"></div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>套餐</th>
+                  <th>状态</th>
+                  <th>容量</th>
+                  <th>授权来源</th>
+                  <th>续费 / 到期</th>
+                </tr>
+              </thead>
+              <tbody id="subscriptions-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/admin-subscriptions.js"></script>
+  </body>
+</html>

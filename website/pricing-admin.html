@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>官网配置 | web4browser 管理后台</title>
+    <link rel="stylesheet" href="/admin-theme.css" />
+  </head>
+  <body class="admin-body">
+    <header class="admin-header">
+      <div class="container admin-header-inner">
+        <div>
+          <div class="admin-title">web4browser 官网配置</div>
+          <div class="admin-subtitle">管理官网主视觉、订阅展示文案、下载入口和版本信息。</div>
+        </div>
+        <div class="admin-header-actions">
+          <a class="button button-secondary" href="/index.html" target="_blank" rel="noreferrer">打开官网</a>
+          <button class="button button-ghost" id="reset-config" type="button">恢复默认</button>
+          <button class="button button-primary" id="save-config" type="button">保存配置</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="container admin-grid">
+        <section class="admin-panel">
+          <div class="admin-panel-header">
+            <h1>展示配置</h1>
+            <p>这里的保存会写入当前浏览器本地配置，方便你先做视觉验收，再决定是否同步到正式官网。</p>
+          </div>
+
+          <div class="form-section">
+            <div class="section-row">
+              <h2>品牌与主视觉</h2>
+              <span class="section-tag">Hero</span>
+            </div>
+            <div class="form-grid">
+              <label class="field">
+                <span>主标题</span>
+                <input id="hero-title-input" type="text" />
+              </label>
+              <label class="field field-span-2">
+                <span>副标题描述</span>
+                <textarea id="hero-description-input" rows="4"></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="section-row">
+              <h2>订阅展示</h2>
+              <span class="section-tag">Pricing</span>
+            </div>
+            <div class="pricing-admin-grid">
+              <div class="pricing-admin-card">
+                <h3>入门版</h3>
+                <div class="form-grid">
+                  <label class="field">
+                    <span>月付价格</span>
+                    <input id="starter-price-input" type="number" min="0" />
+                  </label>
+                  <label class="field">
+                    <span>每月积分</span>
+                    <input id="starter-points-input" type="number" min="0" />
+                  </label>
+                  <label class="field field-span-2">
+                    <span>说明</span>
+                    <input id="starter-caption-input" type="text" />
+                  </label>
+                  <label class="field field-span-2">
+                    <span>按钮文案</span>
+                    <input id="starter-button-label-input" type="text" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="pricing-admin-card pricing-admin-card-highlighted">
+                <h3>成长方案</h3>
+                <div class="form-grid">
+                  <label class="field field-span-2">
+                    <span>说明</span>
+                    <input id="custom-caption-input" type="text" />
+                  </label>
+                  <label class="field field-span-2">
+                    <span>按钮文案</span>
+                    <input id="custom-button-label-input" type="text" />
+                  </label>
+                  <label class="field field-span-2">
+                    <span>积分与价格映射（每行：积分=月付价格）</span>
+                    <textarea id="custom-options-input" rows="8"></textarea>
+                  </label>
+                </div>
+              </div>
+
+              <div class="pricing-admin-card">
+                <h3>专业版</h3>
+                <div class="form-grid">
+                  <label class="field">
+                    <span>月付价格</span>
+                    <input id="pro-price-input" type="number" min="0" />
+                  </label>
+                  <label class="field">
+                    <span>每月积分</span>
+                    <input id="pro-points-input" type="number" min="0" />
+                  </label>
+                  <label class="field field-span-2">
+                    <span>说明</span>
+                    <input id="pro-caption-input" type="text" />
+                  </label>
+                  <label class="field field-span-2">
+                    <span>按钮文案</span>
+                    <input id="pro-button-label-input" type="text" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="pricing-admin-card">
+                <h3>切换与标识</h3>
+                <div class="form-grid">
+                  <label class="field">
+                    <span>月付标签</span>
+                    <input id="monthly-toggle-label-input" type="text" />
+                  </label>
+                  <label class="field">
+                    <span>年付标签</span>
+                    <input id="annual-toggle-label-input" type="text" />
+                  </label>
+                  <label class="field">
+                    <span>年付折扣比例</span>
+                    <input id="annual-discount-input" type="number" step="0.01" min="0" max="0.99" />
+                  </label>
+                  <label class="field">
+                    <span>支付角标</span>
+                    <input id="payment-label-input" type="text" />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="section-row">
+              <h2>下载配置</h2>
+              <span class="section-tag">Download</span>
+            </div>
+            <div class="form-grid">
+              <label class="field">
+                <span>当前版本</span>
+                <input id="downloads-version-input" type="text" />
+              </label>
+              <label class="field">
+                <span>macOS Apple Silicon 链接</span>
+                <input id="download-mac-arm-input" type="text" />
+              </label>
+              <label class="field">
+                <span>macOS Intel 链接</span>
+                <input id="download-mac-x64-input" type="text" />
+              </label>
+              <label class="field">
+                <span>Windows x64 链接</span>
+                <input id="download-win-x64-input" type="text" />
+              </label>
+              <label class="field">
+                <span>Windows ARM64 链接</span>
+                <input id="download-win-arm-input" type="text" />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <aside class="admin-preview">
+          <div class="preview-header">
+            <h2>实时预览</h2>
+            <p>先确认标题、价格、积分和下载区没有跑偏，再发布到正式环境。</p>
+          </div>
+          <div class="preview-hero">
+            <div class="preview-eyebrow" id="preview-eyebrow">指纹浏览器 + OpenClaw 网关</div>
+            <div class="preview-title" id="preview-title"></div>
+            <div class="preview-description" id="preview-description"></div>
+          </div>
+          <div class="preview-pricing" id="preview-pricing"></div>
+          <div class="preview-downloads" id="preview-downloads"></div>
+        </aside>
+      </div>
+    </main>
+
+    <script type="module" src="/pricing-admin.js"></script>
+  </body>
+</html>

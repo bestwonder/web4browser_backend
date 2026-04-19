@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>用户管理 | web4browser 管理后台</title>
+    <link rel="stylesheet" href="/admin-theme.css" />
+  </head>
+  <body class="admin-body" data-admin-page="users">
+    <header class="admin-header">
+      <div class="container admin-header-inner">
+        <div class="admin-brand-wrap">
+          <div class="admin-title">web4browser 用户管理</div>
+          <div class="admin-subtitle">查看账号、授权状态、余额和用户级模型路由。</div>
+        </div>
+        <nav class="admin-top-nav"></nav>
+        <div class="admin-header-actions">
+          <button class="button button-primary" id="admin-refresh" type="button">刷新</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="container">
+        <div class="admin-feedback" id="admin-feedback" hidden></div>
+
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h1>用户列表</h1>
+              <p>搜索用户、查看余额与授权状态，并在下方打开详情工作区。</p>
+            </div>
+          </div>
+
+          <div class="admin-filter-bar">
+            <label class="admin-filter-field admin-filter-field-wide">
+              <span>搜索</span>
+              <input id="user-search" type="search" placeholder="用户昵称或邮箱" />
+            </label>
+            <label class="admin-filter-field">
+              <span>状态</span>
+              <select id="user-status">
+                <option value="">全部</option>
+                <option value="active">生效中</option>
+                <option value="disabled">已禁用</option>
+              </select>
+            </label>
+            <div class="admin-header-actions">
+              <button class="button button-secondary" id="user-apply" type="button">应用筛选</button>
+            </div>
+          </div>
+
+          <div class="admin-summary-grid" id="users-summary"></div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>状态</th>
+                  <th>订阅</th>
+                  <th>余额</th>
+                  <th>累计消耗</th>
+                  <th>最近活跃</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h2>用户详情工作区</h2>
+              <p>发放或扣减积分、冻结权限，并单独覆盖模型路由。</p>
+            </div>
+          </div>
+
+          <div id="user-detail-panel" class="admin-note-block">
+            <div class="admin-empty">请先从上方表格选择一个用户，再加载详情工作区。</div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/admin-users.js"></script>
+  </body>
+</html>

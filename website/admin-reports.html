@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>成本报表 | web4browser 管理后台</title>
+    <link rel="stylesheet" href="/admin-theme.css" />
+  </head>
+  <body class="admin-body" data-admin-page="reports">
+    <header class="admin-header">
+      <div class="container admin-header-inner">
+        <div class="admin-brand-wrap">
+          <div class="admin-title">成本报表</div>
+          <div class="admin-subtitle">查看近期成本走势、用户消耗排行和模型路由分布，方便校准订阅价格与模型策略。</div>
+        </div>
+        <nav class="admin-top-nav"></nav>
+        <div class="admin-header-actions">
+          <button class="button button-secondary" id="admin-refresh" type="button">刷新报表</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="container admin-console-main">
+        <div class="admin-feedback" id="admin-feedback" hidden></div>
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h1>报表周期</h1>
+              <p>按最近 7 天、14 天或 30 天聚合模型调用和成本数据。</p>
+            </div>
+          </div>
+          <div class="admin-filter-bar">
+            <label class="admin-filter-field">
+              <span>统计周期</span>
+              <select id="report-days">
+                <option value="7">最近 7 天</option>
+                <option value="14">最近 14 天</option>
+                <option value="30">最近 30 天</option>
+              </select>
+            </label>
+            <button class="button button-primary" id="report-apply" type="button">刷新报表</button>
+          </div>
+          <div class="admin-metric-grid" id="report-summary"></div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h2>每日走势</h2>
+              <p>按天统计请求数、Token、积分和预估成本。</p>
+            </div>
+          </div>
+          <div class="admin-bars" id="daily-bars"></div>
+        </section>
+
+        <section class="admin-grid">
+          <section class="admin-panel">
+            <div class="admin-section-header">
+              <div>
+                <h2>用户消耗排行</h2>
+                <p>按 Token 使用量排序，方便识别高频用户和高成本账号。</p>
+              </div>
+            </div>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>用户</th>
+                    <th>请求数</th>
+                    <th>Token</th>
+                    <th>积分</th>
+                    <th>预估成本</th>
+                  </tr>
+                </thead>
+                <tbody id="reports-users-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="admin-panel">
+            <div class="admin-section-header">
+              <div>
+                <h2>模型路由分布</h2>
+                <p>查看当前上游 provider 与模型消耗分布，方便后续灰度和调度优化。</p>
+              </div>
+            </div>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>模型</th>
+                    <th>请求数</th>
+                    <th>Token</th>
+                    <th>预估成本</th>
+                  </tr>
+                </thead>
+                <tbody id="reports-models-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/admin-reports.js"></script>
+  </body>
+</html>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>请求日志 | web4browser 管理后台</title>
+    <link rel="stylesheet" href="/admin-theme.css" />
+  </head>
+  <body class="admin-body" data-admin-page="usage">
+    <header class="admin-header">
+      <div class="container admin-header-inner">
+        <div class="admin-brand-wrap">
+          <div class="admin-title">请求日志</div>
+          <div class="admin-subtitle">查看每次模型调用的 Token、积分、成本和延迟，方便排查计费与稳定性问题。</div>
+        </div>
+        <nav class="admin-top-nav"></nav>
+        <div class="admin-header-actions">
+          <button class="button button-secondary" id="admin-refresh" type="button">刷新日志</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="container">
+        <div class="admin-feedback" id="admin-feedback" hidden></div>
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h1>模型请求明细</h1>
+              <p>支持按邮箱或模型关键字搜索，用来核对真实请求日志和成本估算。</p>
+            </div>
+          </div>
+          <div class="admin-filter-bar">
+            <label class="admin-filter-field admin-filter-field-wide">
+              <span>搜索日志</span>
+              <input id="usage-search" type="search" placeholder="邮箱 / 模型别名" />
+            </label>
+            <button class="button button-primary" id="usage-apply" type="button">应用筛选</button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>用户</th>
+                  <th>模型路由</th>
+                  <th>Token</th>
+                  <th>积分</th>
+                  <th>成本</th>
+                  <th>延迟</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody id="usage-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/admin-usage.js"></script>
+  </body>
+</html>

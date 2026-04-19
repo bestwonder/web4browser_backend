@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>积分账本 | web4browser 管理后台</title>
+    <link rel="stylesheet" href="/admin-theme.css" />
+  </head>
+  <body class="admin-body" data-admin-page="ledger">
+    <header class="admin-header">
+      <div class="container admin-header-inner">
+        <div class="admin-brand-wrap">
+          <div class="admin-title">积分账本</div>
+          <div class="admin-subtitle">查看试用发放、购买到账、手工调整和聊天扣费对应的完整积分流水。</div>
+        </div>
+        <nav class="admin-top-nav"></nav>
+        <div class="admin-header-actions">
+          <button class="button button-secondary" id="admin-refresh" type="button">刷新账本</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="container">
+        <div class="admin-feedback" id="admin-feedback" hidden></div>
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h1>账本流水</h1>
+              <p>支持按类型筛选，方便追踪积分发放、扣减和后台调整原因。</p>
+            </div>
+          </div>
+          <div class="admin-filter-bar">
+            <label class="admin-filter-field">
+              <span>账本类型</span>
+              <select id="ledger-type">
+                <option value="">全部</option>
+                <option value="trial_grant">trial_grant</option>
+                <option value="purchase_grant">purchase_grant</option>
+                <option value="usage_deduct">usage_deduct</option>
+                <option value="manual_adjust">manual_adjust</option>
+              </select>
+            </label>
+            <button class="button button-primary" id="ledger-apply" type="button">应用筛选</button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>用户</th>
+                  <th>类型</th>
+                  <th>积分变动</th>
+                  <th>变动后余额</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/admin-ledger.js"></script>
+  </body>
+</html>
