@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: web4browser-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: web4browser_admin
+      POSTGRES_USER: web4browser
+      POSTGRES_PASSWORD: web4browser_dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - web4browser_net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: web4browser-api
+    restart: unless-stopped
+    env_file:
+      - ./services/internal-api-server/.env.docker
+    depends_on:
+      - db
+    volumes:
+      - api_data:/app/data
+    networks:
+      - web4browser_net
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: web4browser-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+    networks:
+      - web4browser_net
+
+volumes:
+  postgres_data:
+  api_data:
+
+networks:
+  web4browser_net:
+    driver: bridge
+

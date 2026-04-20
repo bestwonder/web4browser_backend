@@ -39,6 +39,7 @@ export async function createDatabase({ connectionString }) {
       name text,
       avatar text,
       status text not null default 'active',
+      password_hash text,
       subscription_plan text,
       subscription_package_id text,
       subscription_monthly_points integer,
@@ -268,30 +269,33 @@ export async function createDatabase({ connectionString }) {
     create index if not exists idx_web4browser_subscriptions_status on web4browser_subscriptions(status);
     create index if not exists idx_web4browser_subscriptions_current_period_end on web4browser_subscriptions(current_period_end desc);
     create index if not exists idx_web4browser_admin_audit_logs_target on web4browser_admin_audit_logs(target_type, target_id);
+
+    alter table laolv_users add column if not exists password_hash text;
   `);
 
   async function upsertUser(user) {
     await pool.query(
       `
         insert into laolv_users (
-          user_id, email, name, avatar, status,
+          user_id, email, name, avatar, status, password_hash,
           subscription_plan, subscription_package_id, subscription_monthly_points,
           subscription_status, subscription_expires_at, subscription_auto_renew,
           balance, trial_balance, purchased_balance, bonus_balance, total_used,
           low_balance_threshold, trial_expires_at, access_usage_reason, updated_at
         )
         values (
-          $1, $2, $3, $4, $5,
-          $6, $7, $8,
-          $9, $10, $11,
-          $12, $13, $14, $15, $16,
-          $17, $18, $19, now()
+          $1, $2, $3, $4, $5, $6,
+          $7, $8, $9,
+          $10, $11, $12,
+          $13, $14, $15, $16, $17,
+          $18, $19, $20, now()
         )
         on conflict (user_id) do update set
           email = excluded.email,
           name = excluded.name,
           avatar = excluded.avatar,
           status = excluded.status,
+          password_hash = excluded.password_hash,
           subscription_plan = excluded.subscription_plan,
           subscription_package_id = excluded.subscription_package_id,
           subscription_monthly_points = excluded.subscription_monthly_points,
@@ -314,6 +318,7 @@ export async function createDatabase({ connectionString }) {
         user.name || null,
         user.avatar || null,
         user.status || 'active',
+        user.passwordHash || null,
         user.subscription?.plan || null,
         user.subscription?.packageId || null,
         user.subscription?.monthlyPoints || null,

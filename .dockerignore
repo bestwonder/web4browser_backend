@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+yarn-error.log
+.git
+.gitignore
+services/internal-api-server/data/*.json
+services/internal-api-server/.env
+services/internal-api-server/.env.local
+

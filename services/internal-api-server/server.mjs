@@ -78,6 +78,8 @@ const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL?.trim() || 'noreply@laolv.ai';
 const VERIFICATION_CODE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 const VERIFICATION_CODE_COOLDOWN_MS = 60 * 1000; // 60 seconds
 const PASSWORD_MIN_LENGTH = 8;
+const SESSION_COOKIE_NAME = 'web4browser_session';
+const SESSION_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
 const verificationCodes = new Map(); // key: "register:email" or "reset:email"
 
@@ -110,6 +112,21 @@ function validatePassword(password) {
 
 function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function hashPassword(password) {
+  return hashSync(password, 10);
+}
+
+function verifyPassword(password, passwordHash) {
+  if (!password || !passwordHash) {
+    return false;
+  }
+  try {
+    return compareSync(password, passwordHash);
+  } catch {
+    return false;
+  }
 }
 
 function findUserByEmail(email) {
@@ -1261,6 +1278,75 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function parseCookies(req) {
+  const raw = Array.isArray(req.headers.cookie)
+    ? req.headers.cookie.join('; ')
+    : String(req.headers.cookie || '');
+  const cookies = new Map();
+  for (const part of raw.split(';')) {
+    const separatorIndex = part.indexOf('=');
+    if (separatorIndex === -1) {
+      continue;
+    }
+    const key = part.slice(0, separatorIndex).trim();
+    const value = part.slice(separatorIndex + 1).trim();
+    if (!key) {
+      continue;
+    }
+    try {
+      cookies.set(key, decodeURIComponent(value));
+    } catch {
+      cookies.set(key, value);
+    }
+  }
+  return cookies;
+}
+
+function getSessionTokenFromRequest(req) {
+  const authHeader = req.headers.authorization || '';
+  const headerToken = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : '';
+  const apiKeyHeader = typeof req.headers['x-api-key'] === 'string'
+    ? req.headers['x-api-key'].trim()
+    : Array.isArray(req.headers['x-api-key'])
+      ? String(req.headers['x-api-key'][0] || '').trim()
+      : '';
+  const cookieToken = parseCookies(req).get(SESSION_COOKIE_NAME) || '';
+  return headerToken || apiKeyHeader || cookieToken;
+}
+
+function buildSessionCookie(session) {
+  const expiresAt = new Date(session.expiresAt);
+  const parts = [
+    `${SESSION_COOKIE_NAME}=${encodeURIComponent(session.sessionToken)}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    `Max-Age=${SESSION_COOKIE_MAX_AGE_SECONDS}`,
+  ];
+  if (!Number.isNaN(expiresAt.getTime())) {
+    parts.push(`Expires=${expiresAt.toUTCString()}`);
+  }
+  if (process.env.NODE_ENV === 'production') {
+    parts.push('Secure');
+  }
+  return parts.join('; ');
+}
+
+function buildClearSessionCookie() {
+  const parts = [
+    `${SESSION_COOKIE_NAME}=`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    'Max-Age=0',
+    'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+  ];
+  if (process.env.NODE_ENV === 'production') {
+    parts.push('Secure');
+  }
+  return parts.join('; ');
+}
+
 async function parseJsonBody(req) {
   const chunks = [];
   for await (const chunk of req) {
@@ -1464,6 +1550,19 @@ function normalizeUser(user) {
 
   user.access = deriveAccess(user);
   return user;
+}
+
+function serializePublicUser(user) {
+  return {
+    userId: user.userId,
+    email: user.email,
+    name: user.name,
+    avatar: user.avatar || null,
+    status: user.status || 'active',
+    subscription: user.subscription || null,
+    wallet: user.wallet || null,
+    access: user.access || null,
+  };
 }
 
 function createUserProfile(overrides = {}) {
@@ -1875,14 +1974,7 @@ function hydrateUserRecord(sessionToken) {
 }
 
 function requireSession(req) {
-  const authHeader = req.headers.authorization || '';
-  const headerToken = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : '';
-  const apiKeyHeader = typeof req.headers['x-api-key'] === 'string'
-    ? req.headers['x-api-key'].trim()
-    : Array.isArray(req.headers['x-api-key'])
-      ? String(req.headers['x-api-key'][0] || '').trim()
-      : '';
-  const token = headerToken || apiKeyHeader;
+  const token = getSessionTokenFromRequest(req);
   if (!token) {
     return null;
   }
@@ -2837,7 +2929,7 @@ const server = createServer(async (req, res) => {
         return;
       }
       const userId = `email-${randomBytes(12).toString('hex')}`;
-      const passwordHash = hashSync(password, 10);
+      const passwordHash = hashPassword(password);
       const user = createUserProfile({
         userId,
         email,
@@ -2868,6 +2960,28 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (url.pathname === '/api/auth/login' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const email = body.email?.trim()?.toLowerCase();
+      const password = body.password;
+      const user = email ? findUserByEmail(email) : null;
+
+      if (!user || !verifyPassword(password, user.passwordHash)) {
+        sendJson(res, 401, { error: 'Invalid email or password' });
+        return;
+      }
+
+      const normalizedUser = normalizeUser(user);
+      users.set(normalizedUser.userId, normalizedUser);
+      persistUsers();
+      const session = createSessionRecord(normalizedUser.userId);
+      res.setHeader('Set-Cookie', buildSessionCookie(session));
+      sendJson(res, 200, {
+        user: serializePublicUser(normalizedUser),
+      });
+      return;
+    }
+
     if (url.pathname === '/api/auth/email/login' && req.method === 'POST') {
       const body = await parseJsonBody(req);
       const email = body.email?.trim()?.toLowerCase();
@@ -2881,7 +2995,7 @@ const server = createServer(async (req, res) => {
         sendJson(res, 401, { error: '邮箱或密码错误' });
         return;
       }
-      if (!compareSync(password, user.passwordHash)) {
+      if (!verifyPassword(password, user.passwordHash)) {
         sendJson(res, 401, { error: '邮箱或密码错误' });
         return;
       }
@@ -2944,7 +3058,7 @@ const server = createServer(async (req, res) => {
         sendJson(res, 400, { error: '验证码错误或已过期' });
         return;
       }
-      user.passwordHash = hashSync(newPassword, 10);
+      user.passwordHash = hashPassword(newPassword);
       users.set(user.userId, user);
       persistUsers();
       // Clear all sessions for this user
@@ -2971,12 +3085,25 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (url.pathname === '/api/auth/me' && req.method === 'GET') {
+      const session = requireSession(req);
+      if (!session) {
+        sendJson(res, 401, { error: 'Authentication required' });
+        return;
+      }
+      sendJson(res, 200, {
+        user: serializePublicUser(session.user),
+      });
+      return;
+    }
+
     if (url.pathname === '/api/auth/logout' && req.method === 'POST') {
       const session = requireSession(req);
       if (session) {
         sessionRecords.delete(session.sessionToken);
         persistSessions();
       }
+      res.setHeader('Set-Cookie', buildClearSessionCookie());
       sendJson(res, 200, { success: true });
       return;
     }

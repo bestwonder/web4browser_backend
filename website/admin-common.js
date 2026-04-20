@@ -1,8 +1,4 @@
-const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1']);
-
-export const API_BASE = LOCAL_HOSTNAMES.has(location.hostname)
-  ? 'http://127.0.0.1:3001/api'
-  : '/api';
+export const API_BASE = '/api';
 
 const ADMIN_THEME_HREF = '/admin-theme.css';
 const MISSING_TEXT = '--';
