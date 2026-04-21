@@ -2,6 +2,7 @@ export const API_BASE = '/api';
 
 const ADMIN_THEME_HREF = '/admin-theme.css';
 const MISSING_TEXT = '--';
+const LOGIN_PATH = '/login.html';
 
 const NAV_ITEMS = [
   { page: 'dashboard', href: '/admin.html', label: '总览' },
@@ -103,6 +104,7 @@ const TARGET_TYPE_LABELS = {
 };
 
 ensureAdminTheme();
+const adminAuthReady = guardAdminPage();
 
 function ensureAdminTheme() {
   if (document.querySelector('link[data-admin-theme="true"]')) {
@@ -238,8 +240,71 @@ export function buildQuery(params = {}) {
   return query ? `?${query}` : '';
 }
 
+function redirectToLogin(reason = '') {
+  if (location.pathname === LOGIN_PATH) {
+    return;
+  }
+  document.body?.classList.remove('admin-authenticated');
+  const next = `${location.pathname}${location.search}${location.hash}`;
+  const search = new URLSearchParams({ next });
+  if (reason) {
+    search.set('reason', reason);
+  }
+  location.replace(`${LOGIN_PATH}?${search.toString()}`);
+}
+
+async function guardAdminPage() {
+  if (!document.body?.classList.contains('admin-body')) {
+    return null;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/auth/me`, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) {
+      document.body.classList.remove('admin-authenticated');
+      redirectToLogin('expired');
+      return null;
+    }
+    const payload = await response.json().catch(() => ({}));
+    if (!payload.user?.isAdmin) {
+      document.body.classList.remove('admin-authenticated');
+      redirectToLogin('forbidden');
+      return null;
+    }
+    document.body.classList.add('admin-authenticated');
+    return payload.user;
+  } catch {
+    document.body.classList.remove('admin-authenticated');
+    redirectToLogin('unavailable');
+    return null;
+  }
+}
+
+export function requireAdminAuth() {
+  return adminAuthReady;
+}
+
+export async function logoutAdmin() {
+  await fetch(`${API_BASE}/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  }).catch(() => {});
+  redirectToLogin('logout');
+}
+
 export async function request(path, options = {}) {
+  if (document.body?.classList.contains('admin-body')) {
+    const adminUser = await adminAuthReady;
+    if (!adminUser) {
+      throw new Error('Authentication required');
+    }
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
@@ -251,6 +316,11 @@ export async function request(path, options = {}) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401) {
+      redirectToLogin('expired');
+    } else if (response.status === 403) {
+      redirectToLogin('forbidden');
+    }
     throw new Error(payload.error || `请求失败：${response.status}`);
   }
   return payload;
@@ -269,12 +339,29 @@ function renderAdminNav() {
 export function setActiveAdminNav() {
   ensureAdminTheme();
   renderAdminNav();
+  bindLogoutButton();
   const current = document.body.dataset.adminPage;
   document.querySelectorAll('.admin-top-nav a').forEach((link) => {
     const href = link.getAttribute('href') || '';
     const match = NAV_ITEMS.find((item) => item.page === current && item.href === href);
     link.classList.toggle('is-active', Boolean(match));
   });
+}
+
+function bindLogoutButton() {
+  const actions = document.querySelector('.admin-header-actions');
+  if (!actions || actions.querySelector('[data-admin-logout]')) {
+    return;
+  }
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'button button-secondary';
+  button.dataset.adminLogout = 'true';
+  button.textContent = '退出登录';
+  button.addEventListener('click', () => {
+    logoutAdmin();
+  });
+  actions.appendChild(button);
 }
 
 export function showFeedback(message, type = 'info') {

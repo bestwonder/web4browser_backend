@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>web4browser 管理员登录</title>
+    <link rel="stylesheet" href="/admin-theme.css" />
+  </head>
+  <body class="admin-login-body">
+    <main class="admin-login-main">
+      <section class="admin-login-panel">
+        <div class="admin-brand-wrap">
+          <div class="admin-title">web4browser 管理后台</div>
+          <div class="admin-subtitle">请使用管理员账号登录。</div>
+        </div>
+
+        <div class="admin-feedback" id="login-feedback" hidden></div>
+
+        <form class="admin-login-form" id="login-form">
+          <label class="admin-filter-field">
+            <span>邮箱</span>
+            <input id="login-email" name="email" type="email" autocomplete="username" required />
+          </label>
+          <label class="admin-filter-field">
+            <span>密码</span>
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button class="button button-primary" id="login-submit" type="submit">登录</button>
+        </form>
+      </section>
+    </main>
+
+    <script type="module" src="/login.js"></script>
+  </body>
+</html>
+

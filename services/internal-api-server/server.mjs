@@ -80,6 +80,16 @@ const VERIFICATION_CODE_COOLDOWN_MS = 60 * 1000; // 60 seconds
 const PASSWORD_MIN_LENGTH = 8;
 const SESSION_COOKIE_NAME = 'web4browser_session';
 const SESSION_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+const COOKIE_SECURE = process.env.COOKIE_SECURE === '1'
+  || (process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== '0');
+const ADMIN_EMAILS = new Set(
+  String(process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean),
+);
+const BOOTSTRAP_ADMIN_EMAIL = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase() || '';
+const BOOTSTRAP_ADMIN_PASSWORD = process.env.BOOTSTRAP_ADMIN_PASSWORD || '';
 
 const verificationCodes = new Map(); // key: "register:email" or "reset:email"
 
@@ -1326,7 +1336,7 @@ function buildSessionCookie(session) {
   if (!Number.isNaN(expiresAt.getTime())) {
     parts.push(`Expires=${expiresAt.toUTCString()}`);
   }
-  if (process.env.NODE_ENV === 'production') {
+  if (COOKIE_SECURE) {
     parts.push('Secure');
   }
   return parts.join('; ');
@@ -1341,7 +1351,7 @@ function buildClearSessionCookie() {
     'Max-Age=0',
     'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
   ];
-  if (process.env.NODE_ENV === 'production') {
+  if (COOKIE_SECURE) {
     parts.push('Secure');
   }
   return parts.join('; ');
@@ -1562,6 +1572,7 @@ function serializePublicUser(user) {
     subscription: user.subscription || null,
     wallet: user.wallet || null,
     access: user.access || null,
+    isAdmin: isAdminUser(user),
   };
 }
 
@@ -1573,6 +1584,10 @@ function createUserProfile(overrides = {}) {
     name: overrides.name || '老驴演示用户',
     avatar: overrides.avatar || null,
     status: overrides.status || 'active',
+    role: overrides.role || 'user',
+    authProvider: overrides.authProvider || null,
+    passwordHash: overrides.passwordHash || null,
+    emailVerified: Boolean(overrides.emailVerified),
     subscription: createSubscription({
       plan: null,
       packageId: null,
@@ -1589,6 +1604,43 @@ function createUserProfile(overrides = {}) {
       localProviderManagementAllowed: false,
       usageReason: 'trial',
     },
+  });
+}
+
+function bootstrapAdminUser() {
+  if (!BOOTSTRAP_ADMIN_EMAIL || !BOOTSTRAP_ADMIN_PASSWORD) {
+    return;
+  }
+
+  const existing = findUserByEmail(BOOTSTRAP_ADMIN_EMAIL);
+  if (existing) {
+    existing.role = 'admin';
+    existing.passwordHash = hashPassword(BOOTSTRAP_ADMIN_PASSWORD);
+    existing.emailVerified = true;
+    normalizeUser(existing);
+    users.set(existing.userId, existing);
+    persistUsers();
+    return;
+  }
+
+  const created = createUserProfile({
+    userId: `email-${randomBytes(12).toString('hex')}`,
+    email: BOOTSTRAP_ADMIN_EMAIL,
+    name: 'Admin',
+    authProvider: 'email',
+    passwordHash: hashPassword(BOOTSTRAP_ADMIN_PASSWORD),
+    emailVerified: true,
+    role: 'admin',
+  });
+  users.set(created.userId, created);
+  persistUsers();
+  appendWalletLedgerEntry({
+    userId: created.userId,
+    email: created.email,
+    type: 'trial_grant',
+    pointsDelta: DEFAULT_TRIAL_POINTS,
+    balanceAfter: created.wallet.balance,
+    reason: `Bootstrap admin trial grant ${DEFAULT_TRIAL_POINTS}`,
   });
 }
 
@@ -1979,6 +2031,28 @@ function requireSession(req) {
     return null;
   }
   return hydrateUserRecord(token);
+}
+
+function isAdminUser(user = {}) {
+  const email = String(user.email || '').trim().toLowerCase();
+  return Boolean(
+    user.role === 'admin'
+    || user.isAdmin === true
+    || (email && ADMIN_EMAILS.has(email))
+  );
+}
+
+function requireAdminSession(req, res) {
+  const session = requireSession(req);
+  if (!session) {
+    sendJson(res, 401, { error: 'Authentication required' });
+    return null;
+  }
+  if (!isAdminUser(session.user)) {
+    sendJson(res, 403, { error: 'Admin access required' });
+    return null;
+  }
+  return session;
 }
 
 function decodeJwtPayload(token) {
@@ -2745,6 +2819,8 @@ async function generateHostedAssistantReply(messages, route) {
   };
 }
 
+bootstrapAdminUser();
+
 if (DATABASE_URL) {
   try {
     database = await createDatabase({ connectionString: DATABASE_URL });
@@ -2782,6 +2858,10 @@ const server = createServer(async (req, res) => {
 
   try {
     if ((url.pathname === '/api' || url.pathname === '/api/') && req.method === 'GET') {
+      const adminSession = requireAdminSession(req, res);
+      if (!adminSession) {
+        return;
+      }
       sendJson(res, 200, {
         ok: true,
         service: 'laolv-api',
@@ -3299,6 +3379,13 @@ const server = createServer(async (req, res) => {
         message: 'Subscription portal is not configured yet. Use the app to refresh the current status.',
       });
       return;
+    }
+
+    if (url.pathname.startsWith('/api/admin/')) {
+      const adminSession = requireAdminSession(req, res);
+      if (!adminSession) {
+        return;
+      }
     }
 
     if (url.pathname === '/api/admin/overview' && req.method === 'GET') {
