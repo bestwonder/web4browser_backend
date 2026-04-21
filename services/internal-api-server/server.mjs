@@ -82,10 +82,18 @@ const SESSION_COOKIE_NAME = 'web4browser_session';
 const SESSION_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 const COOKIE_SECURE = process.env.COOKIE_SECURE === '1'
   || (process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== '0');
+const PUBLIC_RELAY_BASE_URL = (process.env.PUBLIC_RELAY_BASE_URL?.trim() || 'https://web4browser.io/api')
+  .replace(/\/$/, '');
 const ADMIN_EMAILS = new Set(
   String(process.env.ADMIN_EMAILS || '')
     .split(',')
     .map((email) => email.trim().toLowerCase())
+    .filter(Boolean),
+);
+const ADMIN_ALLOWED_HOSTS = new Set(
+  String(process.env.ADMIN_ALLOWED_HOSTS || '')
+    .split(',')
+    .map((host) => host.trim().toLowerCase())
     .filter(Boolean),
 );
 const BOOTSTRAP_ADMIN_EMAIL = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase() || '';
@@ -1288,6 +1296,10 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function sendNotFound(res) {
+  sendJson(res, 404, { error: 'Not found' });
+}
+
 function parseCookies(req) {
   const raw = Array.isArray(req.headers.cookie)
     ? req.headers.cookie.join('; ')
@@ -1355,6 +1367,40 @@ function buildClearSessionCookie() {
     parts.push('Secure');
   }
   return parts.join('; ');
+}
+
+function getRequestHost(req) {
+  const forwardedHostHeader = Array.isArray(req.headers['x-forwarded-host'])
+    ? String(req.headers['x-forwarded-host'][0] || '')
+    : String(req.headers['x-forwarded-host'] || '');
+  const hostHeader = forwardedHostHeader || (Array.isArray(req.headers.host)
+    ? String(req.headers.host[0] || '')
+    : String(req.headers.host || ''));
+  return hostHeader.trim().toLowerCase().replace(/:\d+$/, '');
+}
+
+function isAdminHostAllowed(req) {
+  if (!ADMIN_ALLOWED_HOSTS.size) {
+    return true;
+  }
+  return ADMIN_ALLOWED_HOSTS.has(getRequestHost(req));
+}
+
+function requireAdminHost(req, res) {
+  if (isAdminHostAllowed(req)) {
+    return true;
+  }
+  sendNotFound(res);
+  return false;
+}
+
+function buildPublicApiAccess(modelAlias = 'laolv-ai') {
+  return {
+    relayBaseUrl: PUBLIC_RELAY_BASE_URL,
+    modelsEndpoint: `${PUBLIC_RELAY_BASE_URL}/anthropic/v1/models`,
+    messagesEndpoint: `${PUBLIC_RELAY_BASE_URL}/anthropic/v1/messages`,
+    modelAlias,
+  };
 }
 
 async function parseJsonBody(req) {
@@ -1747,6 +1793,14 @@ function buildOverviewPayload() {
       outputCostPer1kTokens: OUTPUT_COST_PER_1K_TOKENS,
       tokensPerPoint: TOKENS_PER_POINT,
     },
+    publicApi: buildPublicApiAccess(
+      MEMBERSHIP_ROUTE_KEYS
+        .map((membershipKey) => {
+          const routeKey = getMembershipRouteKey(membershipKey);
+          return getRouteByKey(routeKey) || getDefaultEnabledRoute();
+        })
+        .find(Boolean)?.publicModelAlias || 'laolv-ai',
+    ),
     pointsByReason,
   };
 }
@@ -1866,10 +1920,7 @@ function buildAdminUserDetailPayload(userId) {
     },
     modelRouting: buildUserRoutingPayload(user),
     apiAccess: {
-      relayBaseUrl: 'https://web4browser.io/api',
-      modelsEndpoint: 'https://web4browser.io/api/anthropic/v1/models',
-      messagesEndpoint: 'https://web4browser.io/api/anthropic/v1/messages',
-      modelAlias: buildUserRoutingPayload(user).effectiveRoute?.publicModelAlias || 'laolv-ai',
+      ...buildPublicApiAccess(buildUserRoutingPayload(user).effectiveRoute?.publicModelAlias || 'laolv-ai'),
       sessionToken: latestSession?.[0] || null,
       issuedAt: latestSession?.[1]?.issuedAt || null,
       expiresAt: latestSession?.[1]?.expiresAt || null,
@@ -2858,6 +2909,9 @@ const server = createServer(async (req, res) => {
 
   try {
     if ((url.pathname === '/api' || url.pathname === '/api/') && req.method === 'GET') {
+      if (!requireAdminHost(req, res)) {
+        return;
+      }
       const adminSession = requireAdminSession(req, res);
       if (!adminSession) {
         return;
@@ -3382,6 +3436,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname.startsWith('/api/admin/')) {
+      if (!requireAdminHost(req, res)) {
+        return;
+      }
       const adminSession = requireAdminSession(req, res);
       if (!adminSession) {
         return;
@@ -3502,8 +3559,10 @@ const server = createServer(async (req, res) => {
         const modelRouting = buildUserRoutingPayload(normalizeUser({ ...storedUser }));
         payload.modelRouting = modelRouting;
         payload.apiAccess = {
-          ...(payload.apiAccess || {}),
-          modelAlias: modelRouting.effectiveRoute?.publicModelAlias || 'laolv-ai',
+          ...buildPublicApiAccess(modelRouting.effectiveRoute?.publicModelAlias || 'laolv-ai'),
+          sessionToken: payload.apiAccess?.sessionToken || null,
+          issuedAt: payload.apiAccess?.issuedAt || null,
+          expiresAt: payload.apiAccess?.expiresAt || null,
         };
       }
       sendJson(res, 200, payload);

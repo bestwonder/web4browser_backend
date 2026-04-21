@@ -48,7 +48,7 @@ Notes:
 - Local model/provider management is disabled at the product layer; access is granted through trial or purchased credits only.
 - When `MINIMAX_API_KEY` is present, chat requests are proxied to your server-side MiniMax model; otherwise the chat endpoint returns a deterministic mock reply for UI testing.
 - Usage events and wallet ledger entries are persisted as JSON files so the admin page can display token usage, estimated cost, and points movements.
-- Recommended production setup is to expose the service behind `https://web4browser.io/api`.
+- Recommended production setup is to expose admin traffic behind `https://console.web4browser.io` and public API traffic behind `https://api.web4browser.io/api`.
 
 Recommended environment variables:
 
@@ -58,6 +58,8 @@ DATABASE_URL=postgresql://laolv:change-me@127.0.0.1:5432/laolv_admin
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=http://127.0.0.1:36619/auth/google/callback
+PUBLIC_RELAY_BASE_URL=https://api.web4browser.io/api
+ADMIN_ALLOWED_HOSTS=console.web4browser.io,127.0.0.1,localhost
 ALLOW_MOCK=1
 DEFAULT_TRIAL_POINTS=600
 DEFAULT_TRIAL_DAYS=3
@@ -83,10 +85,10 @@ LAOLV_MODEL_DISPLAY_NAME=老驴 AI
 
 Admin preview page:
 
-- Website: `https://web4browser.io/admin.html`
-- API base: `https://web4browser.io/api`
+- Website: `https://console.web4browser.io/admin.html`
+- API base: `https://api.web4browser.io/api`
 - Additional pages:
-  - `https://web4browser.io/admin-users.html`
-  - `https://web4browser.io/admin-ledger.html`
-  - `https://web4browser.io/admin-usage.html`
-  - `https://web4browser.io/admin-reports.html`
+  - `https://console.web4browser.io/admin-users.html`
+  - `https://console.web4browser.io/admin-ledger.html`
+  - `https://console.web4browser.io/admin-usage.html`
+  - `https://console.web4browser.io/admin-reports.html`

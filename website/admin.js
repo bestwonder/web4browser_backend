@@ -22,7 +22,10 @@ import {
   wireCopyButtons,
 } from './admin-common.js';
 
-function getRelayBaseUrl() {
+function getRelayBaseUrl(overview = {}) {
+  if (overview.publicApi?.relayBaseUrl) {
+    return overview.publicApi.relayBaseUrl;
+  }
   return API_BASE.startsWith('http')
     ? API_BASE
     : new URL(API_BASE, location.origin).toString();
@@ -94,10 +97,12 @@ function renderPoints(overview) {
 }
 
 function renderApi(overview) {
-  const relayBaseUrl = getRelayBaseUrl();
-  const modelsEndpoint = `${relayBaseUrl}/anthropic/v1/models`;
-  const messagesEndpoint = `${relayBaseUrl}/anthropic/v1/messages`;
-  const modelAlias = overview.routing?.membershipRules?.[0]?.publicModelAlias || 'web4browser-ai';
+  const relayBaseUrl = getRelayBaseUrl(overview);
+  const modelsEndpoint = overview.publicApi?.modelsEndpoint || `${relayBaseUrl}/anthropic/v1/models`;
+  const messagesEndpoint = overview.publicApi?.messagesEndpoint || `${relayBaseUrl}/anthropic/v1/messages`;
+  const modelAlias = overview.publicApi?.modelAlias
+    || overview.routing?.membershipRules?.[0]?.publicModelAlias
+    || 'web4browser-ai';
   document.querySelector('#api-card').innerHTML = `
     <div class="admin-kv-list">
       <div class="admin-kv-item">

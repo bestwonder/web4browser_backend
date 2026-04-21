@@ -110,6 +110,13 @@ async function login(baseUrl, email) {
   return response.headers.get('set-cookie');
 }
 
+function withHost(host, headers = {}) {
+  return {
+    ...headers,
+    'X-Forwarded-Host': host,
+  };
+}
+
 test('admin APIs require an authenticated administrator', async () => {
   const tmpRoot = mkdtempSync(join(tmpdir(), 'web4browser-admin-auth-test-'));
   const dataDir = join(tmpRoot, 'data');
@@ -123,7 +130,9 @@ test('admin APIs require an authenticated administrator', async () => {
     NODE_ENV: 'development',
     PORT: String(port),
     ADMIN_EMAILS: 'admin@example.com',
+    ADMIN_ALLOWED_HOSTS: 'console.web4browser.io',
     COOKIE_SECURE: '0',
+    PUBLIC_RELAY_BASE_URL: 'https://api.web4browser.io/api',
     USERS_DB_PATH: usersPath,
     SESSIONS_DB_PATH: join(dataDir, 'sessions.json'),
     CHATS_DB_PATH: join(dataDir, 'chats.json'),
@@ -142,40 +151,65 @@ test('admin APIs require an authenticated administrator', async () => {
     await waitForHealth(baseUrl);
 
     const anonymousIndexResponse = await fetch(`${baseUrl}/api/`);
-    assert.equal(anonymousIndexResponse.status, 401);
-    assert.deepEqual(await anonymousIndexResponse.json(), { error: 'Authentication required' });
+    assert.equal(anonymousIndexResponse.status, 404);
+    assert.deepEqual(await anonymousIndexResponse.json(), { error: 'Not found' });
 
-    const anonymousResponse = await fetch(`${baseUrl}/api/admin/overview`);
+    const anonymousConsoleIndexResponse = await fetch(`${baseUrl}/api/`, {
+      headers: withHost('console.web4browser.io'),
+    });
+    assert.equal(anonymousConsoleIndexResponse.status, 401);
+    assert.deepEqual(await anonymousConsoleIndexResponse.json(), { error: 'Authentication required' });
+
+    const anonymousResponse = await fetch(`${baseUrl}/api/admin/overview`, {
+      headers: withHost('console.web4browser.io'),
+    });
     assert.equal(anonymousResponse.status, 401);
     assert.deepEqual(await anonymousResponse.json(), { error: 'Authentication required' });
 
     const memberCookie = await login(baseUrl, 'member@example.com');
     const memberIndexResponse = await fetch(`${baseUrl}/api/`, {
-      headers: { Cookie: memberCookie },
+      headers: withHost('console.web4browser.io', { Cookie: memberCookie }),
     });
     assert.equal(memberIndexResponse.status, 403);
     assert.deepEqual(await memberIndexResponse.json(), { error: 'Admin access required' });
 
     const memberResponse = await fetch(`${baseUrl}/api/admin/overview`, {
-      headers: { Cookie: memberCookie },
+      headers: withHost('console.web4browser.io', { Cookie: memberCookie }),
     });
     assert.equal(memberResponse.status, 403);
     assert.deepEqual(await memberResponse.json(), { error: 'Admin access required' });
 
     const adminCookie = await login(baseUrl, 'admin@example.com');
     const adminResponse = await fetch(`${baseUrl}/api/admin/overview`, {
-      headers: { Cookie: adminCookie },
+      headers: withHost('console.web4browser.io', { Cookie: adminCookie }),
     });
     assert.equal(adminResponse.status, 200);
     const payload = await adminResponse.json();
     assert.equal(typeof payload.summary, 'object');
+    assert.equal(payload.publicApi.relayBaseUrl, 'https://api.web4browser.io/api');
+    assert.equal(payload.publicApi.modelsEndpoint, 'https://api.web4browser.io/api/anthropic/v1/models');
+    assert.equal(payload.publicApi.messagesEndpoint, 'https://api.web4browser.io/api/anthropic/v1/messages');
 
     const adminIndexResponse = await fetch(`${baseUrl}/api/`, {
-      headers: { Cookie: adminCookie },
+      headers: withHost('console.web4browser.io', { Cookie: adminCookie }),
     });
     assert.equal(adminIndexResponse.status, 200);
     const indexPayload = await adminIndexResponse.json();
     assert.equal(indexPayload.routes.adminOverview, '/api/admin/overview');
+
+    const apiHostAdminResponse = await fetch(`${baseUrl}/api/admin/overview`, {
+      headers: withHost('api.web4browser.io', { Cookie: adminCookie }),
+    });
+    assert.equal(apiHostAdminResponse.status, 404);
+    assert.deepEqual(await apiHostAdminResponse.json(), { error: 'Not found' });
+
+    const detailResponse = await fetch(`${baseUrl}/api/admin/users/detail?userId=email-admin-user`, {
+      headers: withHost('console.web4browser.io', { Cookie: adminCookie }),
+    });
+    assert.equal(detailResponse.status, 200);
+    const detailPayload = await detailResponse.json();
+    assert.equal(detailPayload.apiAccess.relayBaseUrl, 'https://api.web4browser.io/api');
+    assert.equal(detailPayload.apiAccess.messagesEndpoint, 'https://api.web4browser.io/api/anthropic/v1/messages');
   } catch (error) {
     process.exitCode = 1;
     throw error;

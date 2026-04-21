@@ -30,6 +30,49 @@ Docker api 容器
 Docker db 容器
 ```
 
+## 生产推荐拓扑（console / api 双子域）
+
+正式环境建议拆成两个子域名：
+
+- `console.web4browser.io`：管理员后台专用
+- `api.web4browser.io`：外部 API / relay 专用
+
+推荐访问规则：
+
+- `console.web4browser.io`
+  - 暴露后台页面：`/admin*.html`、`/login.html`
+  - 暴露后台接口：`/api/admin/*`
+  - 暴露后台登录相关接口：`/api/auth/*`
+  - 暴露健康检查：`/api/health`
+  - 额外加一层 `Basic Auth`
+- `api.web4browser.io`
+  - 暴露外部接口：`/api/auth/*`、`/api/account/*`、`/api/device/*`、`/api/chat/*`、`/api/billing/*`、`/api/anthropic/*`
+  - 直接拦截：`/api/admin/*`、`/api`、`/api/`
+  - 不提供任何 `/admin*.html`
+
+当前仓库已经补充了两份宿主机 Nginx 示例：
+
+- `deploy/nginx/console.web4browser.io.conf`
+- `deploy/nginx/api.web4browser.io.conf`
+
+同时，服务端新增了这两个生产相关环境变量：
+
+- `PUBLIC_RELAY_BASE_URL`：后台展示给用户/客户端的外部 API 根地址
+- `ADMIN_ALLOWED_HOSTS`：允许访问 `/api/admin/*` 和 `/api` 的 Host 白名单
+
+建议生产值：
+
+```env
+PUBLIC_RELAY_BASE_URL=https://api.web4browser.io/api
+ADMIN_ALLOWED_HOSTS=console.web4browser.io
+```
+
+本地 Docker 调试时可以临时保留：
+
+```env
+ADMIN_ALLOWED_HOSTS=console.web4browser.io,127.0.0.1,localhost
+```
+
 ## 一、正式环境上线前必须修改的文件
 
 ### 1. 修改 `services/internal-api-server/.env.docker`
@@ -53,6 +96,8 @@ DATABASE_URL=postgresql://web4browser:请改成数据库强密码@db:5432/web4br
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=https://你的域名/auth/google/callback
+PUBLIC_RELAY_BASE_URL=https://api.web4browser.io/api
+ADMIN_ALLOWED_HOSTS=console.web4browser.io
 
 DEFAULT_TRIAL_POINTS=600
 DEFAULT_TRIAL_DAYS=3
@@ -83,6 +128,8 @@ SES_FROM_EMAIL=noreply@example.com
 - `BOOTSTRAP_ADMIN_PASSWORD`：自动创建管理员账号时使用的密码。必须改成强密码。
 - `DATABASE_URL`：API 连接 PostgreSQL 的地址，密码必须和 `docker-compose.yml` 中的 `POSTGRES_PASSWORD` 保持一致。
 - `GOOGLE_REDIRECT_URI`：如果启用 Google 登录，必须改成正式域名。
+- `PUBLIC_RELAY_BASE_URL`：后台展示给用户、客户端或桌面端的外部 API 基地址。双子域部署时应指向 `https://api.web4browser.io/api`。
+- `ADMIN_ALLOWED_HOSTS`：应用层允许访问管理员接口的 Host 白名单。生产环境应收紧为 `console.web4browser.io`。
 - `MINIMAX_API_KEY`：如果聊天/中转功能需要真实调用上游模型，必须填写。
 - `AWS_ACCESS_KEY_ID`、`AWS_SECRET_ACCESS_KEY`、`SES_FROM_EMAIL`：如果需要邮件验证码或通知邮件，填写 AWS SES 参数。
 
@@ -156,6 +203,11 @@ services:
 - 根路径 `/` 默认落到后台入口 `admin.html`。
 
 正式环境通常不用改这个文件。域名、HTTPS、证书、gzip、安全响应头等建议放在宿主机 Nginx 中处理。
+
+如果你采用 `console.web4browser.io` / `api.web4browser.io` 双子域部署，请优先使用仓库里新增的宿主机 Nginx 示例：
+
+- `deploy/nginx/console.web4browser.io.conf`
+- `deploy/nginx/api.web4browser.io.conf`
 
 ### 4. 不要把 `.env.example` 当作 Docker 正式配置
 
@@ -296,6 +348,8 @@ BOOTSTRAP_ADMIN_EMAIL=你的管理员邮箱
 BOOTSTRAP_ADMIN_PASSWORD=你的管理员强密码
 DATABASE_URL=postgresql://web4browser:你的数据库强密码@db:5432/web4browser_admin?sslmode=disable
 GOOGLE_REDIRECT_URI=https://你的域名/auth/google/callback
+PUBLIC_RELAY_BASE_URL=https://api.web4browser.io/api
+ADMIN_ALLOWED_HOSTS=console.web4browser.io
 MINIMAX_API_KEY=你的上游模型 API Key
 ```
 
@@ -400,6 +454,28 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
+如果采用双子域部署，建议不要再手写单域配置，而是直接使用：
+
+- `deploy/nginx/console.web4browser.io.conf`
+- `deploy/nginx/api.web4browser.io.conf`
+
+并将其中的：
+
+- `server_name`
+- `auth_basic_user_file`
+- 上游地址
+
+替换成你的正式值。
+
+生成 Basic Auth 密码文件示例：
+
+```bash
+sudo apt install -y apache2-utils
+sudo htpasswd -c /etc/nginx/.htpasswd-web4browser-console your-admin-gateway-user
+```
+
+这样访问 `console.web4browser.io` 时，会先弹一层 Nginx Basic Auth，再进入项目自己的后台登录流程。
+
 ### 2. 配置域名 DNS
 
 在域名服务商处添加 A 记录：
@@ -443,6 +519,8 @@ sudo certbot renew --dry-run
 
 ```env
 COOKIE_SECURE=1
+PUBLIC_RELAY_BASE_URL=https://api.web4browser.io/api
+ADMIN_ALLOWED_HOSTS=console.web4browser.io
 ```
 
 ## 七、防火墙配置
@@ -615,6 +693,18 @@ curl -i http://127.0.0.1:8080/api/
 HTTP/1.1 401 Unauthorized
 ```
 
+检查 `api` 子域是否拦截管理员接口：
+
+```bash
+curl -i https://api.web4browser.io/api/admin/overview
+```
+
+预期返回：
+
+```text
+HTTP/1.1 404 Not Found
+```
+
 查看端口占用：
 
 ```bash
@@ -642,15 +732,18 @@ proxy_pass http://127.0.0.1:8081;
 - 已修改 `.env.docker` 中的 `DATABASE_URL`，数据库密码和 `POSTGRES_PASSWORD` 一致。
 - 已修改 `BOOTSTRAP_ADMIN_EMAIL` 和 `BOOTSTRAP_ADMIN_PASSWORD`。
 - 已修改 `ADMIN_EMAILS`，只保留真实管理员邮箱。
+- 已修改 `PUBLIC_RELAY_BASE_URL=https://api.web4browser.io/api`。
+- 已修改 `ADMIN_ALLOWED_HOSTS=console.web4browser.io`。
 - 正式 HTTPS 环境设置 `COOKIE_SECURE=1`。
 - 正式环境设置 `ALLOW_MOCK=0`。
 - 如果使用 Google 登录，`GOOGLE_REDIRECT_URI` 已改成正式域名。
 - 如果使用模型中转，`MINIMAX_API_KEY` 已填写真实 Key。
 - Docker web 端口只绑定 `127.0.0.1:8080`。
 - 宿主机 Nginx 已启用 HTTPS。
+- `console.web4browser.io` 已启用 Basic Auth。
+- `api.web4browser.io` 已拦截 `/api/admin/*`、`/api`、`/api/`。
 - 防火墙只开放必要端口。
 - 已验证 `/api/` 未登录返回 `401`。
 - 已验证 `/api/admin/overview` 未登录返回 `401`。
 - 已验证管理员能登录后台。
 - 已配置数据库备份策略。
-

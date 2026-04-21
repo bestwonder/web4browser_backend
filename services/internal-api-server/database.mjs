@@ -1,3 +1,15 @@
+const PUBLIC_RELAY_BASE_URL = (process.env.PUBLIC_RELAY_BASE_URL?.trim() || 'https://web4browser.io/api')
+  .replace(/\/$/, '');
+
+function buildPublicApiAccess(modelAlias = 'laolv-ai') {
+  return {
+    relayBaseUrl: PUBLIC_RELAY_BASE_URL,
+    modelsEndpoint: `${PUBLIC_RELAY_BASE_URL}/anthropic/v1/models`,
+    messagesEndpoint: `${PUBLIC_RELAY_BASE_URL}/anthropic/v1/messages`,
+    modelAlias,
+  };
+}
+
 function buildPoolConfig(connectionString) {
   const needsSsl = !/localhost|127\.0\.0\.1/.test(connectionString) && !/sslmode=disable/.test(connectionString);
   return {
@@ -1056,10 +1068,7 @@ export async function createDatabase({ connectionString }) {
         accessUsageReason: row.access_usage_reason,
       },
       apiAccess: {
-        relayBaseUrl: 'https://web4browser.io/api',
-        modelsEndpoint: 'https://web4browser.io/api/anthropic/v1/models',
-        messagesEndpoint: 'https://web4browser.io/api/anthropic/v1/messages',
-        modelAlias: 'laolv-ai',
+        ...buildPublicApiAccess('laolv-ai'),
         sessionToken: sessionRow?.session_token || null,
         issuedAt: normalizeDate(sessionRow?.issued_at),
         expiresAt: normalizeDate(sessionRow?.expires_at),
