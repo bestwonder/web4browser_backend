@@ -1,5 +1,4 @@
 import {
-  API_BASE,
   bindRefresh,
   clearFeedback,
   escapeHtml,
@@ -7,9 +6,7 @@ import {
   formatDateTime,
   formatNumber,
   labelBillingCycle,
-  labelMembershipKey,
   labelPlan,
-  labelPointReason,
   labelTargetType,
   renderEmptyState,
   renderMetricCards,
@@ -19,23 +16,14 @@ import {
   setTableRows,
   shortId,
   showFeedback,
-  wireCopyButtons,
 } from './admin-common.js';
-
-function getRelayBaseUrl(overview = {}) {
-  if (overview.publicApi?.relayBaseUrl) {
-    return overview.publicApi.relayBaseUrl;
-  }
-  return API_BASE.startsWith('http')
-    ? API_BASE
-    : new URL(API_BASE, location.origin).toString();
-}
 
 function renderMetrics(overview) {
   const summary = overview.summary || {};
   const commercial = overview.commercial || {};
   const orders = commercial.orders || {};
   const devices = commercial.devices || {};
+
   renderMetricCards('#overview-metrics', [
     { label: '用户总数', value: formatNumber(summary.totalUsers), note: '已注册账号' },
     { label: '生效订阅', value: formatNumber(commercial.subscriptions?.active || summary.activeSubscriptions), note: '付费或正在运行' },
@@ -46,88 +34,6 @@ function renderMetrics(overview) {
     { label: '累计 Token', value: formatNumber(summary.totalTokens), note: '平台总消耗' },
     { label: '预估成本', value: formatCurrency(summary.totalEstimatedCostUsd || 0), note: '按用量估算' },
   ]);
-}
-
-function renderCommercial(overview) {
-  const commercial = overview.commercial || {};
-  const orders = commercial.orders || {};
-  const subscriptions = commercial.subscriptions || {};
-  const devices = commercial.devices || {};
-  document.querySelector('#commercial-card').innerHTML = `
-    <div class="admin-kv-list">
-      <div class="admin-kv-item"><span>订单总数</span><strong>${formatNumber(orders.total || 0)}</strong></div>
-      <div class="admin-kv-item"><span>已支付 / 待处理</span><strong>${formatNumber(orders.paid || 0)} / ${formatNumber(orders.pending || 0)}</strong></div>
-      <div class="admin-kv-item"><span>生效 / 试用订阅</span><strong>${formatNumber(subscriptions.active || 0)} / ${formatNumber(subscriptions.trialing || 0)}</strong></div>
-      <div class="admin-kv-item"><span>活跃 / 非活跃设备</span><strong>${formatNumber(devices.active || 0)} / ${formatNumber(devices.inactive || 0)}</strong></div>
-    </div>
-  `;
-}
-
-function renderRouting(overview) {
-  const routing = overview.routing || {};
-  const rules = routing.membershipRules || [];
-  document.querySelector('#routing-card').innerHTML = `
-    <div class="admin-kv-list">
-      <div class="admin-kv-item"><span>品牌显示名</span><strong>${escapeHtml(routing.displayName || 'web4browser')}</strong></div>
-      <div class="admin-kv-item"><span>已启用路由</span><strong>${formatNumber(routing.enabledRoutes || 0)} / ${formatNumber(routing.totalRoutes || 0)}</strong></div>
-      ${rules.map((rule) => `
-        <div class="admin-kv-item">
-          <span>${escapeHtml(labelMembershipKey(rule.membershipKey || 'default'))}</span>
-          <strong>${escapeHtml(rule.title || rule.routeKey || '未分配')}</strong>
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-function renderPoints(overview) {
-  const entries = Object.entries(overview.pointsByReason || {});
-  document.querySelector('#points-card').innerHTML = entries.length
-    ? `
-      <div class="admin-kv-list">
-        ${entries.map(([key, value]) => `
-          <div class="admin-kv-item">
-            <span>${escapeHtml(labelPointReason(key))}</span>
-            <strong class="${Number(value) >= 0 ? 'admin-positive' : 'admin-negative'}">${Number(value) >= 0 ? '+' : ''}${formatNumber(value)} 积分</strong>
-          </div>
-        `).join('')}
-      </div>
-    `
-    : '<div class="admin-empty">暂时还没有积分分布数据。</div>';
-}
-
-function renderApi(overview) {
-  const relayBaseUrl = getRelayBaseUrl(overview);
-  const modelsEndpoint = overview.publicApi?.modelsEndpoint || `${relayBaseUrl}/anthropic/v1/models`;
-  const messagesEndpoint = overview.publicApi?.messagesEndpoint || `${relayBaseUrl}/anthropic/v1/messages`;
-  const modelAlias = overview.publicApi?.modelAlias
-    || overview.routing?.membershipRules?.[0]?.publicModelAlias
-    || 'web4browser-ai';
-  document.querySelector('#api-card').innerHTML = `
-    <div class="admin-kv-list">
-      <div class="admin-kv-item">
-        <span>中转地址</span>
-        <strong class="admin-code">${escapeHtml(relayBaseUrl)}</strong>
-      </div>
-      <div class="admin-kv-item">
-        <span>模型接口</span>
-        <strong class="admin-code">${escapeHtml(modelsEndpoint)}</strong>
-      </div>
-      <div class="admin-kv-item">
-        <span>消息接口</span>
-        <strong class="admin-code">${escapeHtml(messagesEndpoint)}</strong>
-      </div>
-      <div class="admin-kv-item">
-        <span>默认模型别名</span>
-        <strong>${escapeHtml(modelAlias)}</strong>
-      </div>
-      <div class="admin-inline-actions">
-        <button class="button button-secondary button-small" type="button" data-copy-value="${escapeHtml(relayBaseUrl)}">复制中转地址</button>
-        <button class="button button-secondary button-small" type="button" data-copy-value="${escapeHtml(messagesEndpoint)}">复制消息接口</button>
-      </div>
-    </div>
-  `;
-  wireCopyButtons(document.querySelector('#api-card'));
 }
 
 function renderOrders(orders) {
@@ -185,32 +91,6 @@ function renderSubscriptions(subscriptions) {
   );
 }
 
-function renderDevices(devices) {
-  setTableRows(
-    '#devices-table-body',
-    devices.map((device) => `
-      <tr>
-        <td>
-          <div class="admin-user-cell">
-            <strong>${escapeHtml(device.deviceName || device.platform || '未命名设备')}</strong>
-            <span>${escapeHtml(device.platform || '未知系统')} ${escapeHtml(device.appVersion || '')}</span>
-          </div>
-        </td>
-        <td>
-          <div class="admin-user-cell">
-            <strong>${escapeHtml(device.userName || '未知用户')}</strong>
-            <span>${escapeHtml(device.email || device.userId || '--')}</span>
-          </div>
-        </td>
-        <td>${renderStatusPill(device.status || 'unknown')}</td>
-        <td>${formatDateTime(device.lastSeenAt || device.firstSeenAt)}</td>
-      </tr>
-    `),
-    '暂时没有设备数据。',
-    4,
-  );
-}
-
 function renderAudit(entries) {
   setTableRows(
     '#audit-table-body',
@@ -239,22 +119,16 @@ function renderAudit(entries) {
 
 async function loadDashboard() {
   clearFeedback();
-  const [overview, orders, subscriptions, devices, audit] = await Promise.all([
+  const [overview, orders, subscriptions, audit] = await Promise.all([
     request('/admin/overview'),
     request('/admin/orders?limit=6'),
     request('/admin/subscriptions?limit=6'),
-    request('/admin/devices?limit=6'),
     request('/admin/audit?limit=8'),
   ]);
 
   renderMetrics(overview);
-  renderCommercial(overview);
-  renderRouting(overview);
-  renderPoints(overview);
-  renderApi(overview);
   renderOrders(orders.orders || []);
   renderSubscriptions(subscriptions.subscriptions || []);
-  renderDevices(devices.devices || []);
   renderAudit(audit.entries || []);
 }
 
@@ -265,6 +139,5 @@ loadDashboard().catch((error) => {
   showFeedback(`总览加载失败：${error.message}`, 'error');
   renderEmptyState('#orders-table-body', '订单数据暂时不可用。', 6);
   renderEmptyState('#subscriptions-table-body', '订阅数据暂时不可用。', 5);
-  renderEmptyState('#devices-table-body', '设备数据暂时不可用。', 4);
   renderEmptyState('#audit-table-body', '审计数据暂时不可用。', 4);
 });

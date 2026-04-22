@@ -54,51 +54,49 @@
           <div class="admin-bars" id="daily-bars"></div>
         </section>
 
-        <section class="admin-grid">
-          <section class="admin-panel">
-            <div class="admin-section-header">
-              <div>
-                <h2>用户消耗排行</h2>
-                <p>按 Token 使用量排序，方便识别高频用户和高成本账号。</p>
-              </div>
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h2>用户消耗排行</h2>
+              <p>按 Token 使用量排序，方便识别高频用户和高成本账号。</p>
             </div>
-            <div class="admin-table-wrap">
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>用户</th>
-                    <th>请求数</th>
-                    <th>Token</th>
-                    <th>积分</th>
-                    <th>预估成本</th>
-                  </tr>
-                </thead>
-                <tbody id="reports-users-body"></tbody>
-              </table>
-            </div>
-          </section>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>请求数</th>
+                  <th>Token</th>
+                  <th>积分</th>
+                  <th>预估成本</th>
+                </tr>
+              </thead>
+              <tbody id="reports-users-body"></tbody>
+            </table>
+          </div>
+        </section>
 
-          <section class="admin-panel">
-            <div class="admin-section-header">
-              <div>
-                <h2>模型路由分布</h2>
-                <p>查看当前上游 provider 与模型消耗分布，方便后续灰度和调度优化。</p>
-              </div>
+        <section class="admin-panel">
+          <div class="admin-section-header">
+            <div>
+              <h2>模型路由分布</h2>
+              <p>查看当前上游 provider 与模型消耗分布，方便后续灰度和调度优化。</p>
             </div>
-            <div class="admin-table-wrap">
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>模型</th>
-                    <th>请求数</th>
-                    <th>Token</th>
-                    <th>预估成本</th>
-                  </tr>
-                </thead>
-                <tbody id="reports-models-body"></tbody>
-              </table>
-            </div>
-          </section>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>模型</th>
+                  <th>请求数</th>
+                  <th>Token</th>
+                  <th>预估成本</th>
+                </tr>
+              </thead>
+              <tbody id="reports-models-body"></tbody>
+            </table>
+          </div>
         </section>
       </div>
     </main>
