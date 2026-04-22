@@ -1,4 +1,4 @@
-import { escapeHtml } from './admin-common.js';
+import { escapeHtml, setActiveAdminNav } from './admin-common.js';
 import {
   defaultSiteConfig,
   loadSiteConfig,
@@ -251,3 +251,4 @@ document.querySelector('#reset-config')?.addEventListener('click', () => {
 hydrateForm();
 renderPreview();
 bindRealtimePreview();
+setActiveAdminNav();

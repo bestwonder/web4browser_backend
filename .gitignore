@@ -6,3 +6,4 @@ dist/
 .DS_Store
 *.log
 web4browser_ssl.txt
+*.zip

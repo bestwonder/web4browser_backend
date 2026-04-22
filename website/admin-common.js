@@ -3,19 +3,46 @@ export const API_BASE = '/api';
 const ADMIN_THEME_HREF = '/admin-theme.css';
 const MISSING_TEXT = '--';
 const LOGIN_PATH = '/login.html';
+const ADMIN_HOME_PATH = '/admin.html';
+const ADMIN_NAV_GROUP_ATTR = 'data-admin-nav-group';
 
-const NAV_ITEMS = [
-  { page: 'dashboard', href: '/admin.html', label: '总览' },
-  { page: 'users', href: '/admin-users.html', label: '用户' },
-  { page: 'orders', href: '/admin-orders.html', label: '订单' },
-  { page: 'subscriptions', href: '/admin-subscriptions.html', label: '订阅' },
-  { page: 'devices', href: '/admin-devices.html', label: '设备' },
-  { page: 'audit', href: '/admin-audit.html', label: '审计' },
-  { page: 'routing', href: '/admin-routing.html', label: '路由' },
-  { page: 'ledger', href: '/admin-ledger.html', label: '积分' },
-  { page: 'usage', href: '/admin-usage.html', label: '用量' },
-  { page: 'reports', href: '/admin-reports.html', label: '报表' },
+const NAV_GROUPS = [
+  {
+    title: '总览',
+    items: [
+      { page: 'dashboard', href: '/admin.html', label: '总览' },
+    ],
+  },
+  {
+    title: '用户与订单',
+    items: [
+      { page: 'users', href: '/admin-users.html', label: '用户' },
+      { page: 'orders', href: '/admin-orders.html', label: '订单' },
+      { page: 'subscriptions', href: '/admin-subscriptions.html', label: '订阅' },
+      { page: 'devices', href: '/admin-devices.html', label: '设备' },
+    ],
+  },
+  {
+    title: '系统与分析',
+    items: [
+      { page: 'routing', href: '/admin-routing.html', label: '路由' },
+      { page: 'ledger', href: '/admin-ledger.html', label: '积分' },
+      { page: 'usage', href: '/admin-usage.html', label: '用量' },
+      { page: 'reports', href: '/admin-reports.html', label: '报表' },
+      { page: 'audit', href: '/admin-audit.html', label: '审计' },
+    ],
+  },
+  {
+    title: '站点配置',
+    items: [
+      { page: 'pricing', href: '/pricing-admin.html', label: '官网配置' },
+    ],
+  },
 ];
+const NAV_GROUP_KEYS = NAV_GROUPS.map((group, index) => ({
+  group,
+  key: `${group.items[0]?.page || 'group'}-${index}`,
+}));
 
 const PLAN_LABELS = {
   free: '免费版',
@@ -327,24 +354,184 @@ export async function request(path, options = {}) {
 }
 
 function renderAdminNav() {
-  const nav = document.querySelector('.admin-top-nav');
+  const nav = document.querySelector('.admin-sidebar-nav');
   if (!nav) {
     return;
   }
-  nav.innerHTML = NAV_ITEMS.map((item) => (
-    `<a href="${item.href}">${escapeHtml(item.label)}</a>`
-  )).join('');
+  const current = document.body?.dataset.adminPage || '';
+  const openGroupKey = getDefaultOpenAdminGroupKey(current);
+  nav.innerHTML = NAV_GROUP_KEYS.map(({ group, key }) => {
+    if (group.items.length === 1) {
+      const item = group.items[0];
+      return `
+        <section class="admin-nav-group admin-nav-group-single">
+          <a
+            href="${item.href}"
+            class="admin-nav-link${item.page === current ? ' is-active' : ''}"
+            ${item.page === current ? 'aria-current="page"' : ''}
+            title="${escapeHtml(item.label)}"
+          >
+            <span class="admin-nav-link-label">${escapeHtml(item.label)}</span>
+          </a>
+        </section>
+      `;
+    }
+    const expanded = key === openGroupKey;
+    return `
+      <section class="admin-nav-group${expanded ? ' is-open' : ''}" ${ADMIN_NAV_GROUP_ATTR}="${key}">
+        <button
+          type="button"
+          class="admin-nav-group-toggle"
+          aria-expanded="${expanded ? 'true' : 'false'}"
+        >
+          <span class="admin-nav-group-title">${escapeHtml(group.title)}</span>
+          <span class="admin-nav-group-indicator" aria-hidden="true"></span>
+        </button>
+        <div class="admin-nav-group-links"${expanded ? '' : ' hidden'}>
+          ${group.items.map((item) => `
+            <a
+              href="${item.href}"
+              class="admin-nav-link${item.page === current ? ' is-active' : ''}"
+              ${item.page === current ? 'aria-current="page"' : ''}
+              title="${escapeHtml(item.label)}"
+            >
+              <span class="admin-nav-link-label">${escapeHtml(item.label)}</span>
+            </a>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }).join('');
 }
 
 export function setActiveAdminNav() {
   ensureAdminTheme();
+  mountAdminLayout();
   renderAdminNav();
+  bindAdminNavGroups();
   bindLogoutButton();
-  const current = document.body.dataset.adminPage;
-  document.querySelectorAll('.admin-top-nav a').forEach((link) => {
-    const href = link.getAttribute('href') || '';
-    const match = NAV_ITEMS.find((item) => item.page === current && item.href === href);
-    link.classList.toggle('is-active', Boolean(match));
+}
+
+function mountAdminLayout() {
+  if (!document.body?.classList.contains('admin-body')) {
+    return;
+  }
+  if (document.querySelector('.admin-layout-shell')) {
+    return;
+  }
+  const header = document.querySelector('.admin-header');
+  const main = document.querySelector('.admin-main');
+  if (!header || !main) {
+    return;
+  }
+
+  const title = header.querySelector('.admin-title')?.textContent?.trim() || 'web4browser 管理后台';
+  const subtitle = header.querySelector('.admin-subtitle')?.textContent?.trim() || '';
+  const actions = header.querySelector('.admin-header-actions');
+
+  const shell = document.createElement('div');
+  shell.className = 'admin-layout-shell';
+
+  const sidebar = document.createElement('aside');
+  sidebar.className = 'admin-sidebar';
+  sidebar.innerHTML = `
+    <div class="admin-sidebar-inner">
+      <div class="admin-sidebar-brand">
+        <div class="admin-sidebar-brand-bar">
+          <a class="admin-sidebar-home" href="${ADMIN_HOME_PATH}" title="web4browser">web4browser</a>
+        </div>
+        <div class="admin-sidebar-caption">管理后台</div>
+      </div>
+      <nav class="admin-sidebar-nav" aria-label="后台导航"></nav>
+    </div>
+  `;
+
+  const contentShell = document.createElement('div');
+  contentShell.className = 'admin-content-shell';
+
+  const pageHeader = document.createElement('header');
+  pageHeader.className = 'admin-page-header';
+
+  const heading = document.createElement('div');
+  heading.className = 'admin-page-heading';
+  heading.innerHTML = `
+    <h1>${escapeHtml(title)}</h1>
+    ${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ''}
+  `;
+  pageHeader.appendChild(heading);
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'admin-page-toolbar admin-header-actions';
+  if (actions) {
+    while (actions.firstChild) {
+      toolbar.appendChild(actions.firstChild);
+    }
+  }
+  pageHeader.appendChild(toolbar);
+
+  const contentMain = document.createElement('main');
+  contentMain.className = 'admin-content-main';
+
+  const contentContainer = document.createElement('div');
+  contentContainer.className = 'admin-content-container';
+
+  const sourceContainer = main.firstElementChild?.classList?.contains('container')
+    ? main.firstElementChild
+    : main;
+  while (sourceContainer.firstChild) {
+    contentContainer.appendChild(sourceContainer.firstChild);
+  }
+  contentMain.appendChild(contentContainer);
+
+  contentShell.append(pageHeader, contentMain);
+  shell.append(sidebar, contentShell);
+
+  const parent = header.parentNode;
+  if (!parent) {
+    return;
+  }
+  parent.insertBefore(shell, header);
+  header.remove();
+  main.remove();
+}
+
+function getDefaultOpenAdminGroupKey(currentPage) {
+  const currentGroup = NAV_GROUP_KEYS.find(({ group }) => group.items.some((item) => item.page === currentPage));
+  if (currentGroup?.group.items.length > 1) {
+    return currentGroup.key;
+  }
+  return '';
+}
+
+function applyAdminNavGroupState(openGroupKey) {
+  document.querySelectorAll(`.admin-nav-group[${ADMIN_NAV_GROUP_ATTR}]`).forEach((section) => {
+    const key = section.getAttribute(ADMIN_NAV_GROUP_ATTR) || '';
+    const expanded = key === openGroupKey;
+    section.classList.toggle('is-open', expanded);
+    const toggle = section.querySelector('.admin-nav-group-toggle');
+    const links = section.querySelector('.admin-nav-group-links');
+    toggle?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    if (links) {
+      links.hidden = !expanded;
+    }
+  });
+}
+
+function bindAdminNavGroups() {
+  const nav = document.querySelector('.admin-sidebar-nav');
+  if (!nav || nav.dataset.bound === 'true') {
+    return;
+  }
+  nav.dataset.bound = 'true';
+  nav.addEventListener('click', (event) => {
+    const toggle = event.target.closest('.admin-nav-group-toggle');
+    if (!toggle) {
+      return;
+    }
+    const section = toggle.closest(`.admin-nav-group[${ADMIN_NAV_GROUP_ATTR}]`);
+    const key = section?.getAttribute(ADMIN_NAV_GROUP_ATTR) || '';
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    applyAdminNavGroupState(expanded ? '' : key);
   });
 }
 
