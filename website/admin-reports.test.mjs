@@ -8,6 +8,7 @@ test('reports page stacks top users and model distribution instead of squeezing 
   assert.match(html, /用户消耗排行/);
   assert.match(html, /模型路由分布/);
   assert.doesNotMatch(html, /<section class="admin-grid">/);
+  assert.match(html, /<div class="container">\s*<div class="admin-console-main">/);
   assert.match(html, /id="reports-users-body"/);
   assert.match(html, /id="reports-models-body"/);
 });

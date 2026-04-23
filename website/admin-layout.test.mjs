@@ -33,12 +33,18 @@ test('admin theme defines the shared sidebar layout shell', async () => {
   assert.match(css, /\.admin-layout-shell\s*\{[\s\S]*height:\s*100vh/i);
   assert.match(css, /\.admin-content-shell\s*\{[\s\S]*height:\s*100vh/i);
   assert.match(css, /\.admin-content-main\s*\{[\s\S]*overflow-y:\s*auto/i);
+  assert.doesNotMatch(css, /\.admin-content-main\s*\{[\s\S]*overflow-x:\s*hidden/i);
   assert.match(css, /\.admin-content-main\s*\{[\s\S]*min-height:\s*0/i);
   assert.match(css, /\.admin-content-main\s*\{[\s\S]*padding:\s*24px var\(--admin-content-padding-x\) 40px/i);
   assert.match(css, /\.admin-content-container\s*\{[\s\S]*width:\s*min\(var\(--admin-content-max\), 100%\)/i);
   assert.match(css, /\.admin-content-container\s*\{[\s\S]*margin:\s*0 auto/i);
+  assert.match(css, /\.admin-table-wrap\s*\{[\s\S]*overflow:\s*auto/i);
+  assert.match(css, /\.admin-table-wrap\s*\{[\s\S]*max-width:\s*100%/i);
+  assert.match(css, /\.admin-table\s*\{[\s\S]*min-width:\s*760px/i);
   assert.match(css, /\.admin-grid,\s*[\r\n]+\s*\.admin-console-main\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1\.08fr\) minmax\(360px, 0\.92fr\)/i);
   assert.match(css, /@media \(max-width:\s*1480px\)\s*\{[\s\S]*\.admin-grid,\s*[\r\n]+\s*\.admin-console-main[\s\S]*grid-template-columns:\s*1fr/i);
+  assert.match(css, /@media \(max-width:\s*1180px\)\s*\{[\s\S]*\.admin-table\s*\{[\s\S]*min-width:\s*680px/i);
+  assert.match(css, /@media \(max-width:\s*760px\)\s*\{[\s\S]*\.admin-table\s*\{[\s\S]*min-width:\s*560px/i);
   assert.doesNotMatch(css, /admin-sidebar-collapsed/);
   assert.doesNotMatch(css, /\.admin-sidebar-toggle/);
 });

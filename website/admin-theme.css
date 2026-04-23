@@ -307,7 +307,7 @@ body.admin-login-body {
 
 .admin-content-main {
   min-height: 0;
-  overflow-x: hidden;
+  overflow-x: auto;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 24px var(--admin-content-padding-x) 40px;
@@ -491,6 +491,7 @@ body.admin-login-body {
 .admin-panel,
 .admin-preview,
 .admin-link-card {
+  min-width: 0;
   background: var(--admin-surface-strong);
   border: 1px solid var(--admin-line);
   border-radius: 8px;
@@ -642,7 +643,11 @@ body.admin-login-body {
 }
 
 .admin-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 8px;
   border: 1px solid var(--admin-line);
   background: #ffffff;
@@ -651,7 +656,7 @@ body.admin-login-body {
 .admin-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 840px;
+  min-width: 760px;
 }
 
 .admin-table th,
@@ -1162,6 +1167,10 @@ body.admin-login-body {
   .admin-header-actions {
     justify-content: flex-start;
   }
+
+  .admin-table {
+    min-width: 680px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1198,7 +1207,8 @@ body.admin-login-body {
   }
 
   .admin-content-main {
-    overflow: visible;
+    overflow-x: auto;
+    overflow-y: visible;
     padding: 18px 12px 28px;
   }
 
@@ -1267,5 +1277,15 @@ body.admin-login-body {
   .button,
   .button-small {
     width: 100%;
+  }
+
+  .admin-table {
+    min-width: 560px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 11px 12px;
+    font-size: 12px;
   }
 }
