@@ -14,6 +14,9 @@
   --admin-warn: #c27a17;
   --admin-danger: #d14343;
   --admin-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+  --admin-shell-max: 1720px;
+  --admin-content-max: 1520px;
+  --admin-content-padding-x: clamp(20px, 2.6vw, 36px);
 }
 
 body.admin-body {
@@ -31,7 +34,7 @@ body.admin-body:not(.admin-authenticated) > *:not(script) {
 }
 
 body.admin-body .container {
-  width: min(1400px, calc(100vw - 48px));
+  width: min(var(--admin-shell-max), calc(100vw - 48px));
   margin: 0 auto;
 }
 
@@ -307,11 +310,12 @@ body.admin-login-body {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 24px 32px 40px;
+  padding: 24px var(--admin-content-padding-x) 40px;
 }
 
 .admin-content-container {
-  width: min(1360px, 100%);
+  width: min(var(--admin-content-max), 100%);
+  margin: 0 auto;
   display: grid;
   align-content: start;
   gap: 20px;
@@ -449,8 +453,8 @@ body.admin-login-body {
 .admin-grid,
 .admin-console-main {
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+  gap: 20px;
   align-items: start;
 }
 
@@ -1118,6 +1122,13 @@ body.admin-login-body {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 11px;
   line-height: 1.5;
+}
+
+@media (max-width: 1480px) {
+  .admin-grid,
+  .admin-console-main {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 1180px) {
