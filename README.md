@@ -2,6 +2,8 @@
 
 本文档说明如何在正式 Linux 服务器上使用 Docker 部署当前项目，以及上线前需要修改哪些文件、哪些参数。
 
+更新项目时，防止服务器上 /services/internal-api-server/.env.docker 和 docker-compose.yml 文件被覆盖
+
 当前项目由三个 Docker 服务组成：
 
 - `web`：Nginx 静态站点容器，提供 `website` 目录中的后台页面。

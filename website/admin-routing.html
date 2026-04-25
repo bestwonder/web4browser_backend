@@ -1,162 +1,258 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>模型路由 | web4browser 管理后台</title>
-    <link rel="stylesheet" href="/admin-theme.css" />
-  </head>
-  <body class="admin-body" data-admin-page="routing">
-    <header class="admin-header">
-      <div class="container admin-header-inner">
-        <div class="admin-brand-wrap">
-          <div class="admin-title">模型路由</div>
-          <div class="admin-subtitle">按会员类型设置默认模型，并支持在用户级别手动覆盖具体路由。</div>
-        </div>
-        <nav class="admin-top-nav">
-          <a href="/admin.html">总览</a>
-          <a href="/admin-routing.html">模型路由</a>
-          <a href="/admin-users.html">用户管理</a>
-          <a href="/admin-ledger.html">积分账本</a>
-          <a href="/admin-usage.html">请求日志</a>
-          <a href="/admin-reports.html">成本报表</a>
-        </nav>
-        <div class="admin-header-actions">
-          <button class="button button-secondary" id="admin-refresh" type="button">刷新规则</button>
-        </div>
-      </div>
-    </header>
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>模型路由 | web4browser 管理后台</title>
+		<link
+			rel="stylesheet"
+			href="/admin-theme.css"
+		/>
+	</head>
+	<body
+		class="admin-body"
+		data-admin-page="routing"
+	>
+		<header class="admin-header">
+			<div class="container admin-header-inner">
+				<div class="admin-brand-wrap">
+					<div class="admin-title">模型路由</div>
+					<div class="admin-subtitle">按会员类型设置默认模型，并支持在用户级别手动覆盖具体路由。</div>
+				</div>
+				<nav class="admin-top-nav">
+					<a href="/admin.html">总览</a>
+					<a href="/admin-routing.html">模型路由</a>
+					<a href="/admin-users.html">用户管理</a>
+					<a href="/admin-ledger.html">积分账本</a>
+					<a href="/admin-usage.html">请求日志</a>
+					<a href="/admin-reports.html">成本报表</a>
+				</nav>
+				<div class="admin-header-actions">
+					<button
+						class="button button-secondary"
+						id="admin-refresh"
+						type="button"
+					>
+						刷新规则
+					</button>
+				</div>
+			</div>
+		</header>
 
-    <main class="admin-main">
-      <div class="container">
-        <div class="admin-feedback" id="admin-feedback" hidden></div>
+		<main class="admin-main">
+			<div class="container">
+				<div
+					class="admin-feedback"
+					id="admin-feedback"
+					hidden
+				></div>
 
-        <section class="admin-panel">
-          <div class="admin-section-header">
-            <div>
-              <h1>会员默认规则</h1>
-              <p>先定义免费、月费、年费三类会员默认走哪条模型路由。单个用户如需特殊配置，可在用户详情中做覆盖。</p>
-            </div>
-            <button class="button button-primary" id="save-membership-rules" type="button">保存会员规则</button>
-          </div>
-          <div class="admin-rule-grid" id="membership-rules"></div>
-        </section>
+				<section class="admin-panel">
+					<div class="admin-section-header">
+						<div>
+							<h1>会员默认规则</h1>
+							<p>
+								先定义免费、月费、年费三类会员默认走哪条模型路由。单个用户如需特殊配置，可在用户详情中做覆盖。
+							</p>
+						</div>
+						<button
+							class="button button-primary"
+							id="save-membership-rules"
+							type="button"
+						>
+							保存会员规则
+						</button>
+					</div>
+					<div
+						class="admin-rule-grid"
+						id="membership-rules"
+					></div>
+				</section>
 
-        <section class="admin-panel">
-          <div class="admin-section-header">
-            <div>
-              <h2>模型目录</h2>
-              <p>这里维护所有可用模型路由。会员规则和单用户覆盖最终都从这份目录里挑选。</p>
-            </div>
-            <button class="button button-secondary" id="create-route" type="button">新建路由</button>
-          </div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>路由键</th>
-                  <th>展示名称</th>
-                  <th>对外别名</th>
-                  <th>上游模型</th>
-                  <th>费率</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="route-table-body"></tbody>
-            </table>
-          </div>
-        </section>
+				<section class="admin-panel">
+					<div class="admin-section-header">
+						<div>
+							<h2>模型目录</h2>
+							<p>这里维护所有可用模型路由。会员规则和单用户覆盖最终都从这份目录里挑选。</p>
+						</div>
+						<button
+							class="button button-secondary"
+							id="create-route"
+							type="button"
+						>
+							新建路由
+						</button>
+					</div>
+					<div class="admin-table-wrap">
+						<table class="admin-table">
+							<thead>
+								<tr>
+									<th>路由键</th>
+									<th>展示名称</th>
+									<th>对外别名</th>
+									<th>上游模型</th>
+									<th>费率</th>
+									<th>状态</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+							<tbody id="route-table-body"></tbody>
+						</table>
+					</div>
+				</section>
 
-        <section class="admin-panel">
-          <div class="admin-section-header">
-            <div>
-              <h2>路由编辑器</h2>
-              <p>支持编辑上游模型、Base URL、Anthropic 兼容地址和单模型成本。保存后新请求会按最新规则生效。</p>
-            </div>
-          </div>
-          <div class="form-grid">
-            <label class="field">
-              <span>路由键</span>
-              <input id="route-key" type="text" placeholder="例如：web4browser-standard" />
-            </label>
-            <label class="field">
-              <span>展示名称</span>
-              <input id="route-title" type="text" placeholder="例如：web4browser AI / MiniMax M2.7" />
-            </label>
-            <label class="field">
-              <span>对外模型别名</span>
-              <input id="route-alias" type="text" placeholder="例如：web4browser-ai" />
-            </label>
-            <label class="field">
-              <span>上游提供方</span>
-              <input id="route-provider" type="text" placeholder="例如：minimax" />
-            </label>
-            <label class="field">
-              <span>上游模型</span>
-              <input id="route-model" type="text" placeholder="例如：MiniMax-M2.7" />
-            </label>
-            <label class="field">
-              <span>启用状态</span>
-              <select id="route-enabled">
-                <option value="true">已启用</option>
-                <option value="false">已停用</option>
-              </select>
-            </label>
-            <label class="field field-span-2">
-              <span>上游 Base URL</span>
-              <input id="route-base-url" type="text" placeholder="例如：https://api.minimaxi.com/v1" />
-            </label>
-            <label class="field field-span-2">
-              <span>Anthropic 兼容 Base URL</span>
-              <input id="route-anthropic-url" type="text" placeholder="例如：https://api.web4browser.io/api/anthropic" />
-            </label>
-            <label class="field">
-              <span>输入成本 / 1K Tokens</span>
-              <input id="route-input-cost" type="number" step="0.0001" placeholder="0.0000" />
-            </label>
-            <label class="field">
-              <span>输出成本 / 1K Tokens</span>
-              <input id="route-output-cost" type="number" step="0.0001" placeholder="0.0000" />
-            </label>
-            <label class="field field-span-2">
-              <span>备注</span>
-              <textarea id="route-note" rows="3" placeholder="例如：给免费用户使用的标准路由"></textarea>
-            </label>
-          </div>
-          <div class="admin-inline-actions">
-            <button class="button button-primary" id="save-route" type="button">保存路由</button>
-            <button class="button button-secondary" id="reset-route-form" type="button">清空表单</button>
-          </div>
-        </section>
+				<section class="admin-panel">
+					<div class="admin-section-header">
+						<div>
+							<h2>路由编辑器</h2>
+							<p>
+								支持编辑上游模型、Base URL、Anthropic
+								兼容地址和单模型成本。保存后新请求会按最新规则生效。
+							</p>
+						</div>
+					</div>
+					<div class="form-grid">
+						<label class="field">
+							<span>路由键</span>
+							<input
+								id="route-key"
+								type="text"
+								placeholder="例如：laolv-standard"
+							/>
+						</label>
+						<label class="field">
+							<span>展示名称</span>
+							<input
+								id="route-title"
+								type="text"
+								placeholder="例如：老驴 AI / MiniMax-M2.7"
+							/>
+						</label>
+						<label class="field">
+							<span>对外模型别名</span>
+							<input
+								id="route-alias"
+								type="text"
+								placeholder="例如：laolv-ai"
+							/>
+						</label>
+						<label class="field">
+							<span>上游提供方</span>
+							<input
+								id="route-provider"
+								type="text"
+								placeholder="例如：minimax"
+							/>
+						</label>
+						<label class="field">
+							<span>上游模型</span>
+							<input
+								id="route-model"
+								type="text"
+								placeholder="例如：MiniMax-M2.7"
+							/>
+						</label>
+						<label class="field">
+							<span>启用状态</span>
+							<select id="route-enabled">
+								<option value="true">已启用</option>
+								<option value="false">已停用</option>
+							</select>
+						</label>
+						<label class="field field-span-2">
+							<span>上游 Base URL</span>
+							<input
+								id="route-base-url"
+								type="text"
+								placeholder="例如：https://api.minimaxi.com/v1"
+							/>
+						</label>
+						<label class="field field-span-2">
+							<span>Anthropic 兼容 Base URL</span>
+							<input
+								id="route-anthropic-url"
+								type="text"
+								placeholder="例如：https://api.minimaxi.com/anthropic"
+							/>
+						</label>
+						<label class="field">
+							<span>输入成本 / 1K Tokens</span>
+							<input
+								id="route-input-cost"
+								type="number"
+								step="0.0001"
+								placeholder="0.0000"
+							/>
+						</label>
+						<label class="field">
+							<span>输出成本 / 1K Tokens</span>
+							<input
+								id="route-output-cost"
+								type="number"
+								step="0.0001"
+								placeholder="0.0000"
+							/>
+						</label>
+						<label class="field field-span-2">
+							<span>备注</span>
+							<textarea
+								id="route-note"
+								rows="3"
+								placeholder="例如：默认模型路由"
+							></textarea>
+						</label>
+					</div>
+					<div class="admin-inline-actions">
+						<button
+							class="button button-primary"
+							id="save-route"
+							type="button"
+						>
+							保存路由
+						</button>
+						<button
+							class="button button-secondary"
+							id="reset-route-form"
+							type="button"
+						>
+							清空表单
+						</button>
+					</div>
+				</section>
 
-        <section class="admin-panel">
-          <div class="admin-section-header">
-            <div>
-              <h2>当前用户覆盖</h2>
-              <p>这里显示已被手动指定模型路由的用户。新增或调整覆盖请去用户管理页的用户详情中操作。</p>
-            </div>
-          </div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>用户</th>
-                  <th>会员类型</th>
-                  <th>覆盖路由</th>
-                  <th>对外别名</th>
-                  <th>备注</th>
-                  <th>更新时间</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="override-table-body"></tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-    </main>
+				<section class="admin-panel">
+					<div class="admin-section-header">
+						<div>
+							<h2>当前用户覆盖</h2>
+							<p>这里显示已被手动指定模型路由的用户。新增或调整覆盖请去用户管理页的用户详情中操作。</p>
+						</div>
+					</div>
+					<div class="admin-table-wrap">
+						<table class="admin-table">
+							<thead>
+								<tr>
+									<th>用户</th>
+									<th>会员类型</th>
+									<th>覆盖路由</th>
+									<th>对外别名</th>
+									<th>备注</th>
+									<th>更新时间</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+							<tbody id="override-table-body"></tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+		</main>
 
-    <script type="module" src="/admin-routing.js"></script>
-  </body>
+		<script
+			type="module"
+			src="/admin-routing.js"
+		></script>
+	</body>
 </html>

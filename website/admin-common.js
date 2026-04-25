@@ -5,6 +5,8 @@ const MISSING_TEXT = '--';
 const LOGIN_PATH = '/login.html';
 const ADMIN_HOME_PATH = '/admin.html';
 const ADMIN_NAV_GROUP_ATTR = 'data-admin-nav-group';
+const ADMIN_NAV_GROUP_STORAGE_KEY = 'web4browser.admin.nav-groups';
+const DEFAULT_OPEN_ADMIN_GROUP_PAGES = new Set(['users', 'orders', 'subscriptions', 'devices']);
 
 const NAV_GROUPS = [
   {
@@ -359,7 +361,7 @@ function renderAdminNav() {
     return;
   }
   const current = document.body?.dataset.adminPage || '';
-  const openGroupKey = getDefaultOpenAdminGroupKey(current);
+  const openGroupKeys = getDefaultOpenAdminGroupKeys(current);
   nav.innerHTML = NAV_GROUP_KEYS.map(({ group, key }) => {
     if (group.items.length === 1) {
       const item = group.items[0];
@@ -376,7 +378,7 @@ function renderAdminNav() {
         </section>
       `;
     }
-    const expanded = key === openGroupKey;
+    const expanded = openGroupKeys.has(key);
     return `
       <section class="admin-nav-group${expanded ? ' is-open' : ''}" ${ADMIN_NAV_GROUP_ATTR}="${key}">
         <button
@@ -495,18 +497,77 @@ function mountAdminLayout() {
   main.remove();
 }
 
-function getDefaultOpenAdminGroupKey(currentPage) {
-  const currentGroup = NAV_GROUP_KEYS.find(({ group }) => group.items.some((item) => item.page === currentPage));
-  if (currentGroup?.group.items.length > 1) {
-    return currentGroup.key;
-  }
-  return '';
+function readAdminNavGroupPreferences() {
+  try {
+    const raw = localStorage.getItem(ADMIN_NAV_GROUP_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {}
+  return {};
 }
 
-function applyAdminNavGroupState(openGroupKey) {
+function writeAdminNavGroupPreferences(preferences) {
+  try {
+    localStorage.setItem(ADMIN_NAV_GROUP_STORAGE_KEY, JSON.stringify(preferences));
+  } catch {}
+}
+
+function getDefaultOpenAdminGroupKeys(currentPage) {
+  const preferences = readAdminNavGroupPreferences();
+  const openGroupKeys = new Set();
+
+  NAV_GROUP_KEYS.forEach(({ group, key }) => {
+    if (group.items.length <= 1) {
+      return;
+    }
+    const preference = preferences[key];
+    if (typeof preference === 'boolean') {
+      if (preference) {
+        openGroupKeys.add(key);
+      }
+      return;
+    }
+    const includesCurrentPage = group.items.some((item) => item.page === currentPage);
+    const isDefaultOpenGroup = group.items.some((item) => DEFAULT_OPEN_ADMIN_GROUP_PAGES.has(item.page));
+    if (includesCurrentPage || isDefaultOpenGroup) {
+      openGroupKeys.add(key);
+    }
+  });
+
+  return openGroupKeys;
+}
+
+function getActiveAdminGroupKeys() {
+  const openGroupKeys = new Set();
   document.querySelectorAll(`.admin-nav-group[${ADMIN_NAV_GROUP_ATTR}]`).forEach((section) => {
     const key = section.getAttribute(ADMIN_NAV_GROUP_ATTR) || '';
-    const expanded = key === openGroupKey;
+    const toggle = section.querySelector('.admin-nav-group-toggle');
+    if (key && toggle?.getAttribute('aria-expanded') === 'true') {
+      openGroupKeys.add(key);
+    }
+  });
+  return openGroupKeys;
+}
+
+function updateAdminNavGroupPreference(key, expanded) {
+  if (!key) {
+    return;
+  }
+  const preferences = readAdminNavGroupPreferences();
+  preferences[key] = expanded;
+  writeAdminNavGroupPreferences(preferences);
+}
+
+function applyAdminNavGroupState(openGroupKeys) {
+  const activeKeys = openGroupKeys instanceof Set ? openGroupKeys : new Set(openGroupKeys || []);
+  document.querySelectorAll(`.admin-nav-group[${ADMIN_NAV_GROUP_ATTR}]`).forEach((section) => {
+    const key = section.getAttribute(ADMIN_NAV_GROUP_ATTR) || '';
+    const expanded = activeKeys.has(key);
     section.classList.toggle('is-open', expanded);
     const toggle = section.querySelector('.admin-nav-group-toggle');
     const links = section.querySelector('.admin-nav-group-links');
@@ -531,7 +592,14 @@ function bindAdminNavGroups() {
     const section = toggle.closest(`.admin-nav-group[${ADMIN_NAV_GROUP_ATTR}]`);
     const key = section?.getAttribute(ADMIN_NAV_GROUP_ATTR) || '';
     const expanded = toggle.getAttribute('aria-expanded') === 'true';
-    applyAdminNavGroupState(expanded ? '' : key);
+    const openGroupKeys = getActiveAdminGroupKeys();
+    if (expanded) {
+      openGroupKeys.delete(key);
+    } else {
+      openGroupKeys.add(key);
+    }
+    applyAdminNavGroupState(openGroupKeys);
+    updateAdminNavGroupPreference(key, !expanded);
   });
 }
 

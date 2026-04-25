@@ -62,6 +62,12 @@ test('admin common mounts the shared sidebar layout and grouped navigation', asy
   assert.match(script, /admin-nav-group-single/);
   assert.match(script, /admin-nav-group-toggle/);
   assert.match(script, /bindAdminNavGroups/);
+  assert.match(script, /ADMIN_NAV_GROUP_STORAGE_KEY/);
+  assert.match(script, /DEFAULT_OPEN_ADMIN_GROUP_PAGES\s*=\s*new Set\(\['users', 'orders', 'subscriptions', 'devices'\]\)/);
+  assert.match(script, /getDefaultOpenAdminGroupKeys/);
+  assert.match(script, /const openGroupKeys = getDefaultOpenAdminGroupKeys\(current\)/);
+  assert.match(script, /localStorage\.getItem\(ADMIN_NAV_GROUP_STORAGE_KEY\)/);
+  assert.match(script, /localStorage\.setItem\(ADMIN_NAV_GROUP_STORAGE_KEY,/);
   assert.match(script, /group\.items\.length === 1/);
   assert.doesNotMatch(script, /admin-nav-group-heading/);
   assert.match(script, /aria-expanded/);

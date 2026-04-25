@@ -7,3 +7,4 @@ dist/
 *.log
 web4browser_ssl.txt
 *.zip
+*.sql
