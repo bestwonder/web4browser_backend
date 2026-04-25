@@ -9,8 +9,6 @@ services:
       POSTGRES_PASSWORD: web4browser_dev_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5431:5432"
     networks:
       - web4browser_net
 
@@ -26,6 +24,8 @@ services:
       - db
     volumes:
       - api_data:/app/data
+    ports:
+      - "127.0.0.1:3008:3001"
     networks:
       - web4browser_net
 
@@ -38,7 +38,7 @@ services:
     depends_on:
       - api
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     networks:
       - web4browser_net
 
